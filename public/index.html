@@ -33,27 +33,25 @@
   .index-price{font-size:14px;font-weight:700;font-family:'Space Mono',monospace}
   .index-chg{font-size:9px;font-family:'Space Mono',monospace;margin-top:2px}
   .index-desc{font-size:8px;color:#2a2a2a;margin-top:3px}
+  .nav-tabs{display:flex;gap:6px;margin-bottom:14px;background:rgba(255,255,255,.02);border-radius:8px;padding:4px;border:1px solid rgba(255,255,255,.06)}
+  .nav-tab{flex:1;padding:9px 6px;border-radius:6px;border:1px solid transparent;background:transparent;color:#555;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;text-align:center}
+  .nav-tab.active{background:rgba(0,255,136,.10);color:#00ff88;border-color:rgba(0,255,136,.2)}
   .scan-btn{width:100%;padding:15px;border-radius:11px;border:none;background:linear-gradient(135deg,#00ff88,#00bb55);color:#000;font-size:13px;font-weight:800;letter-spacing:1.5px;cursor:pointer;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 20px rgba(0,255,136,.18);transition:all .2s ease}
   .scan-btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
   .scan-btn:disabled{background:rgba(0,255,136,.07);color:#00ff88;box-shadow:none;cursor:not-allowed;transform:none}
-  .progress-wrap{margin-bottom:14px}
-  .progress-top{display:flex;justify-content:space-between;margin-bottom:4px;font-size:10px;color:#555;font-family:'Space Mono',monospace}
-  .progress-bar-bg{height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden}
-  .progress-bar{height:100%;background:linear-gradient(90deg,#00ff88,#00bb55);border-radius:2px;transition:width .8s ease;width:0%}
-  /* Polling status box */
   .polling-box{background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.18);border-radius:10px;padding:14px 16px;margin-bottom:14px;display:none;align-items:center;gap:12px}
   .polling-box.visible{display:flex}
   .polling-spinner{font-size:20px;animation:spin .9s linear infinite;display:inline-block}
-  .polling-text{font-size:12px;color:#a5b4fc;line-height:1.5}
+  .polling-text{font-size:12px;color:#a5b4fc;line-height:1.5;flex:1}
   .polling-pct{font-size:18px;font-weight:800;color:#a5b4fc;font-family:'Space Mono',monospace;white-space:nowrap}
   .error-box{background:rgba(255,68,68,.08);border:1px solid rgba(255,68,68,.2);border-radius:10px;padding:14px;margin-bottom:14px;font-size:13px;color:#ff9999;text-align:center;display:none}
   .sector-wrap{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:none}
   .sector-title{font-size:9px;color:#555;letter-spacing:2px;font-weight:700;margin-bottom:8px}
   .sector-tags{display:flex;flex-wrap:wrap;gap:5px}
   .sector-tag{padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600}
-  .tabs{display:flex;gap:6px;margin-bottom:14px;background:rgba(255,255,255,.02);border-radius:8px;padding:4px;border:1px solid rgba(255,255,255,.06)}
-  .tab{flex:1;padding:8px;border-radius:6px;border:1px solid transparent;background:transparent;color:#555;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
-  .tab.active{background:rgba(0,255,136,.10);color:#00ff88;border-color:rgba(0,255,136,.2)}
+  .result-tabs{display:flex;gap:6px;margin-bottom:14px;background:rgba(255,255,255,.02);border-radius:8px;padding:4px;border:1px solid rgba(255,255,255,.06)}
+  .result-tab{flex:1;padding:8px;border-radius:6px;border:1px solid transparent;background:transparent;color:#555;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
+  .result-tab.active{background:rgba(0,255,136,.10);color:#00ff88;border-color:rgba(0,255,136,.2)}
   .signal-card{background:linear-gradient(135deg,rgba(0,255,136,.04),rgba(0,150,70,.01));border:1px solid rgba(0,255,136,.18);border-radius:14px;padding:18px;position:relative;overflow:hidden;margin-bottom:12px}
   .card-accent{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#00ff88,#00cc55)}
   .rank-badge{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
@@ -99,6 +97,20 @@
   .table-body{max-height:460px;overflow-y:auto}
   .table-row{display:grid;grid-template-columns:26px 68px 1fr 50px 50px 44px 44px 56px;gap:5px;padding:8px 12px;align-items:center;border-bottom:1px solid rgba(255,255,255,.03);font-size:11px;font-family:'Space Mono',monospace}
   .table-row.top10{background:rgba(0,255,136,.025)}
+  /* Performance Tab */
+  .perf-panel{display:none}
+  .perf-panel.visible{display:block}
+  .perf-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+  .perf-stat{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:12px;text-align:center}
+  .perf-stat-val{font-size:22px;font-weight:800;font-family:'Space Mono',monospace;margin-bottom:3px}
+  .perf-stat-label{font-size:9px;color:#555;letter-spacing:1.5px;font-weight:700}
+  .verify-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px;margin-bottom:10px}
+  .verify-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .verify-date{font-size:10px;color:#555;letter-spacing:1.5px;font-weight:700}
+  .verify-table-head{display:grid;grid-template-columns:70px 1fr 70px 70px 70px 70px 70px 90px;gap:4px;padding:7px 10px;background:rgba(255,255,255,.03);border-radius:6px;font-size:8px;color:#444;letter-spacing:1px;font-weight:700;margin-bottom:4px}
+  .verify-row{display:grid;grid-template-columns:70px 1fr 70px 70px 70px 70px 70px 90px;gap:4px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.03);font-size:11px;font-family:'Space Mono',monospace;align-items:center}
+  .verify-row:last-child{border-bottom:none}
+  .result-badge{padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.5px;text-align:center}
   .trade-log{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;margin-top:18px;display:none}
   .trade-log-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
   .trade-log-title{font-size:10px;color:#555;letter-spacing:2px;font-weight:700}
@@ -111,9 +123,10 @@
   .fade-in{animation:fadeUp .4s ease both}
   @media(max-width:480px){
     .stats{grid-template-columns:1fr 1fr}
+    .perf-summary{grid-template-columns:1fr 1fr}
     .indices-grid{grid-template-columns:1fr 1fr}
-    .table-head,.table-row{grid-template-columns:22px 60px 1fr 44px 44px 38px}
-    .table-head span:nth-child(n+7),.table-row span:nth-child(n+7){display:none}
+    .verify-table-head,.verify-row{grid-template-columns:60px 1fr 60px 60px 80px}
+    .verify-table-head span:nth-child(n+4):not(:last-child),.verify-row span:nth-child(n+4):not(:last-child){display:none}
   }
 </style>
 </head>
@@ -132,6 +145,7 @@
 
 <div class="main">
 
+  <!-- Stats -->
   <div class="stats">
     <div class="stat">
       <div class="stat-label">PORTFOLIO USD</div>
@@ -186,56 +200,87 @@
     </div>
   </div>
 
-  <!-- Scan Button -->
-  <button class="scan-btn" id="scanBtn" onclick="startScan()">
-    📡 SCAN 100 US STOCKS — FIND TOP 10 BUYS
-  </button>
+  <!-- Main Nav Tabs -->
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchMainTab('signals')">📡 Signals</button>
+    <button class="nav-tab" onclick="switchMainTab('performance')">📊 Performance</button>
+    <button class="nav-tab" onclick="switchMainTab('history')">📅 History</button>
+  </div>
 
-  <!-- Progress bar -->
-  <div class="progress-wrap" id="progressWrap" style="display:none">
-    <div class="progress-top">
-      <span id="progressLabel">Starting scan...</span>
-      <span id="progressPct">0%</span>
+  <!-- SIGNALS TAB -->
+  <div id="signalsPanel">
+    <button class="scan-btn" id="scanBtn" onclick="startScan()">
+      📡 SCAN 100 US STOCKS — FIND TOP 10 BUYS
+    </button>
+
+    <div class="polling-box" id="pollingBox">
+      <span class="polling-spinner">⟳</span>
+      <div class="polling-text" id="pollingText">Scan running in background...<br/><span style="color:#666;font-size:11px">This page updates automatically</span></div>
+      <span class="polling-pct" id="pollingPct">0%</span>
     </div>
-    <div class="progress-bar-bg"><div class="progress-bar" id="progressBar"></div></div>
-  </div>
 
-  <!-- Polling status -->
-  <div class="polling-box" id="pollingBox">
-    <span class="polling-spinner">⟳</span>
-    <div class="polling-text" id="pollingText">Scan running in background...<br/><span style="color:#666;font-size:11px">This page updates automatically — no need to refresh</span></div>
-    <span class="polling-pct" id="pollingPct">0%</span>
-  </div>
+    <div class="error-box" id="errorBox"></div>
 
-  <!-- Error -->
-  <div class="error-box" id="errorBox"></div>
-
-  <!-- Sector breakdown -->
-  <div class="sector-wrap" id="sectorWrap">
-    <div class="sector-title" id="sectorTitle">0 STOCKS SCORED</div>
-    <div class="sector-tags" id="sectorTags"></div>
-  </div>
-
-  <!-- Tabs -->
-  <div class="tabs" id="tabsWrap" style="display:none">
-    <button class="tab active" onclick="switchTab('top10')">🏆 Top 10 Buy Signals</button>
-    <button class="tab" onclick="switchTab('all')" id="allTabBtn">📋 All Results</button>
-  </div>
-
-  <div id="top10Container"></div>
-
-  <div class="table-wrap" id="tableWrap">
-    <div class="table-head">
-      <span>#</span><span>TICKER</span><span>SECTOR</span>
-      <span>SCORE</span><span>CONF</span><span>RSI</span><span>5D%</span><span>52W</span>
+    <div class="sector-wrap" id="sectorWrap">
+      <div class="sector-title" id="sectorTitle">0 STOCKS SCORED</div>
+      <div class="sector-tags" id="sectorTags"></div>
     </div>
-    <div class="table-body" id="tableBody"></div>
+
+    <div class="result-tabs" id="resultTabsWrap" style="display:none">
+      <button class="result-tab active" onclick="switchResultTab('top10')">🏆 Top 10 Buy Signals</button>
+      <button class="result-tab" onclick="switchResultTab('all')" id="allTabBtn">📋 All Results</button>
+    </div>
+
+    <div id="top10Container"></div>
+
+    <div class="table-wrap" id="tableWrap">
+      <div class="table-head">
+        <span>#</span><span>TICKER</span><span>SECTOR</span>
+        <span>SCORE</span><span>CONF</span><span>RSI</span><span>5D%</span><span>52W</span>
+      </div>
+      <div class="table-body" id="tableBody"></div>
+    </div>
+
+    <div class="footer" id="scanFooter" style="display:none">
+      ⚠️ Rule-based signals only · Not financial advice · Always do your own research
+    </div>
   </div>
 
-  <div class="footer" id="scanFooter" style="display:none">
-    ⚠️ Rule-based signals only · Not financial advice · Always do your own research
+  <!-- PERFORMANCE TAB -->
+  <div id="performancePanel" class="perf-panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-size:13px;color:#888">Signal accuracy over last 7 days</div>
+      <button onclick="loadVerification()" style="padding:6px 14px;border-radius:6px;border:1px solid rgba(0,255,136,.2);background:rgba(0,255,136,.08);color:#00ff88;font-size:11px;font-weight:700;cursor:pointer">🔄 Refresh</button>
+    </div>
+
+    <!-- Summary stats -->
+    <div class="perf-summary" id="perfSummary">
+      <div class="perf-stat"><div class="perf-stat-val" style="color:#00ff88" id="perfTargetHit">—</div><div class="perf-stat-label">TARGET HIT</div></div>
+      <div class="perf-stat"><div class="perf-stat-val" style="color:#fbbf24" id="perfEntryHit">—</div><div class="perf-stat-label">ENTRY HIT</div></div>
+      <div class="perf-stat"><div class="perf-stat-val" style="color:#ff5555" id="perfStopHit">—</div><div class="perf-stat-label">STOP HIT</div></div>
+      <div class="perf-stat"><div class="perf-stat-val" style="color:#a5b4fc" id="perfTotal">—</div><div class="perf-stat-label">TOTAL SIGNALS</div></div>
+    </div>
+
+    <div id="verificationContainer">
+      <div style="text-align:center;color:#444;padding:30px;font-size:12px">
+        Loading verification data...<br/>
+        <span style="font-size:10px;color:#333">Verifications run automatically at 8:30 AM AEST after market close</span>
+      </div>
+    </div>
   </div>
 
+  <!-- HISTORY TAB -->
+  <div id="historyPanel" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-size:13px;color:#888">Top 10 signals saved to database</div>
+      <button onclick="loadHistory()" style="padding:6px 14px;border-radius:6px;border:1px solid rgba(99,102,241,.2);background:rgba(99,102,241,.08);color:#a5b4fc;font-size:11px;font-weight:700;cursor:pointer">🔄 Refresh</button>
+    </div>
+    <div id="historyContainer">
+      <div style="text-align:center;color:#444;padding:30px;font-size:12px">Loading signal history...</div>
+    </div>
+  </div>
+
+  <!-- Trade Log -->
   <div class="trade-log" id="tradeLog">
     <div class="trade-log-header">
       <span class="trade-log-title">TRADE LOG</span>
@@ -249,7 +294,7 @@
 <script>
 // ── State ─────────────────────────────────────────────────────────────────────
 let allResults=[], trades=[], loggedSet=new Set();
-let portfolio=1000, activeTab='top10';
+let portfolio=1000, activeResultTab='top10', activeMainTab='signals';
 let pollTimer=null;
 
 const SECTOR_COLORS={
@@ -271,6 +316,17 @@ function updatePortfolio(val){
   document.getElementById('statTarget').textContent='$'+(portfolio*1.075).toFixed(0);
 }
 
+// ── Main tab switching ────────────────────────────────────────────────────────
+function switchMainTab(tab) {
+  activeMainTab=tab;
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('active',['signals','performance','history'][i]===tab));
+  document.getElementById('signalsPanel').style.display=tab==='signals'?'block':'none';
+  document.getElementById('performancePanel').classList.toggle('visible',tab==='performance');
+  document.getElementById('historyPanel').style.display=tab==='history'?'block':'none';
+  if(tab==='performance') loadVerification();
+  if(tab==='history') loadHistory();
+}
+
 // ── Last scan banner ──────────────────────────────────────────────────────────
 function showLastScanBanner(scannedAt, fromCache) {
   const banner=document.getElementById('lastScanBanner');
@@ -287,92 +343,59 @@ function showLastScanBanner(scannedAt, fromCache) {
   banner.classList.add('visible');
 }
 
-// ── Start scan — triggers background scan then polls ─────────────────────────
+// ── Scan ──────────────────────────────────────────────────────────────────────
 async function startScan() {
   const btn=document.getElementById('scanBtn');
-  btn.disabled=true;
-  btn.innerHTML='<span style="display:inline-block;animation:spin .9s linear infinite">⟳</span> STARTING SCAN...';
-
+  btn.disabled=true; btn.innerHTML='<span style="display:inline-block;animation:spin .9s linear infinite">⟳</span> STARTING SCAN...';
   document.getElementById('errorBox').style.display='none';
   document.getElementById('top10Container').innerHTML='';
   document.getElementById('tableWrap').style.display='none';
-  document.getElementById('tabsWrap').style.display='none';
+  document.getElementById('resultTabsWrap').style.display='none';
   document.getElementById('sectorWrap').style.display='none';
   document.getElementById('scanFooter').style.display='none';
   loggedSet=new Set();
 
-  // Fetch indices first
-  try{
-    const ir=await fetch('/api/indices');
-    const id=await ir.json();
-    if(id.success) renderIndices(id.data);
-  }catch(e){}
+  try{ const ir=await fetch('/api/indices'); const id=await ir.json(); if(id.success) renderIndices(id.data); }catch(e){}
 
-  // Trigger scan (returns immediately)
   try{
-    const res=await fetch('/api/scan');
-    const data=await res.json();
+    const res=await fetch('/api/scan'); const data=await res.json();
     if(data.success&&data.results){
-      // Got cached results immediately
-      btn.disabled=false;
-      btn.innerHTML='📡 RESCAN 100 US STOCKS';
+      btn.disabled=false; btn.innerHTML='📡 RESCAN 100 US STOCKS';
       renderResults(data.results);
-      showLastScanBanner(data.scannedAt, data.fromCache||false);
+      showLastScanBanner(data.scannedAt,data.fromCache||false);
       document.getElementById('statScanned').textContent=data.results.length;
       return;
     }
-    // Scan started in background — start polling
     startPolling();
   }catch(e){
-    btn.disabled=false;
-    btn.innerHTML='📡 SCAN 100 US STOCKS — FIND TOP 10 BUYS';
-    showError('Could not connect to server. Make sure the app is running.');
+    btn.disabled=false; btn.innerHTML='📡 SCAN 100 US STOCKS — FIND TOP 10 BUYS';
+    document.getElementById('errorBox').textContent='Could not connect to server.';
+    document.getElementById('errorBox').style.display='block';
   }
 }
 
-// ── Polling — checks /api/results every 10 seconds ───────────────────────────
 function startPolling() {
   document.getElementById('pollingBox').classList.add('visible');
-  document.getElementById('progressWrap').style.display='none';
-  updatePolling(0, 100);
-
   if(pollTimer) clearInterval(pollTimer);
-  pollTimer = setInterval(async ()=>{
+  pollTimer=setInterval(async()=>{
     try{
-      const res=await fetch('/api/results');
-      const data=await res.json();
-
+      const res=await fetch('/api/results'); const data=await res.json();
       if(data.scanning){
-        // Still scanning — update progress
         const pct=data.progress||0;
-        updatePolling(pct, data.total||100);
+        document.getElementById('pollingPct').textContent=pct+'%';
+        document.getElementById('pollingText').innerHTML=`Scanning in background... <strong style="color:#e0e0e0">${pct}% complete</strong><br/><span style="color:#666;font-size:11px">Results appear automatically · ${data.total||100} stocks</span>`;
         document.getElementById('statScanned').textContent=`${data.scanned||0}`;
       } else if(data.ready&&data.results){
-        // Scan complete!
-        clearInterval(pollTimer);
-        pollTimer=null;
+        clearInterval(pollTimer); pollTimer=null;
         document.getElementById('pollingBox').classList.remove('visible');
         const btn=document.getElementById('scanBtn');
-        btn.disabled=false;
-        btn.innerHTML='📡 RESCAN 100 US STOCKS';
+        btn.disabled=false; btn.innerHTML='📡 RESCAN 100 US STOCKS';
         renderResults(data.results);
-        showLastScanBanner(data.scannedAt, data.fromCache||false);
+        showLastScanBanner(data.scannedAt,data.fromCache||false);
         document.getElementById('statScanned').textContent=data.results.length;
       }
-    }catch(e){
-      console.log('Poll error:', e.message);
-    }
-  }, 10000); // poll every 10 seconds
-}
-
-function updatePolling(pct, total){
-  document.getElementById('pollingPct').textContent=pct+'%';
-  document.getElementById('pollingText').innerHTML=`Scanning stocks in background... <strong style="color:#e0e0e0">${pct}% complete</strong><br/><span style="color:#666;font-size:11px">Results appear automatically when done · ${total} stocks total</span>`;
-}
-
-function showError(msg){
-  const eb=document.getElementById('errorBox');
-  eb.textContent=msg; eb.style.display='block';
+    }catch(e){console.log('Poll error:',e.message);}
+  },10000);
 }
 
 // ── Render Indices ────────────────────────────────────────────────────────────
@@ -393,15 +416,14 @@ function renderIndices(data){
   sb.textContent=s.t;sb.style.color=s.c;sb.style.background=s.bg;sb.style.display='block';
 }
 
-// ── Render Results ────────────────────────────────────────────────────────────
+// ── Render Signals ────────────────────────────────────────────────────────────
 function renderResults(results){
   if(!results.length)return;
-  const counts={};
-  results.forEach(r=>counts[r.sector]=(counts[r.sector]||0)+1);
+  const counts={};results.forEach(r=>counts[r.sector]=(counts[r.sector]||0)+1);
   document.getElementById('sectorTitle').textContent=results.length+' STOCKS SCORED';
   document.getElementById('sectorTags').innerHTML=Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([s,n])=>{const c=sc(s);return`<span class="sector-tag" style="background:${c.bg};color:${c.text};border:1px solid ${c.border}">${s} ${n}</span>`;}).join('');
   document.getElementById('sectorWrap').style.display='block';
-  document.getElementById('tabsWrap').style.display='flex';
+  document.getElementById('resultTabsWrap').style.display='flex';
   document.getElementById('scanFooter').style.display='block';
   document.getElementById('allTabBtn').textContent=`📋 All ${results.length} Results`;
   allResults=results;
@@ -426,13 +448,138 @@ function signalCardHTML(s,rank){
   return`<div class="signal-card"><div class="card-accent"></div><div class="rank-badge" style="background:${rnkBg};color:${rnkC}">#${rank}</div><div class="card-header"><div class="card-ticker-row"><span class="card-ticker">${s.ticker}</span><span class="sector-pill" style="background:${c.bg};color:${c.text};border:1px solid ${c.border}">${s.sector}</span><span class="buy-pill">▲ BUY</span></div><div class="card-name">${s.name}</div></div><div class="live-price"><span class="price-badge">📡 Live: $${s.price}<span style="margin-left:8px;color:${s.dayChg>=0?g:r}">${s.dayChg>=0?'+':''}${s.dayChg}% today</span></span></div><div class="price-grid"><div class="price-box"><div class="price-box-label">ENTRY</div><div class="price-box-val" style="color:#e0e0e0">$${s.entry}</div></div><div class="price-box"><div class="price-box-label">TARGET</div><div class="price-box-val" style="color:${g}">$${s.target}</div></div><div class="price-box"><div class="price-box-label">STOP</div><div class="price-box-val" style="color:${r}">$${s.stop}</div></div></div><div class="badges"><span class="badge" style="color:${g};background:rgba(0,255,136,.08)">+${s.upside}% target</span><span class="badge" style="color:${r};background:rgba(255,70,70,.08)">-${s.downside}% stop</span><span class="badge" style="color:#888;background:rgba(255,255,255,.04)">R/R ${s.rr}:1</span></div><div class="w52-wrap"><div class="w52-title">52-WEEK RANGE</div>${s.week52Low&&s.week52High?`<div class="w52-labels"><span>$${s.week52Low}</span><span style="font-size:9px;font-weight:700;color:${w52color};font-family:'Space Mono',monospace">${w52pct.toFixed(0)}% of range</span><span>$${s.week52High}</span></div><div class="w52-bar-bg"><div class="w52-bar-fill" style="width:${w52pct}%;background:linear-gradient(90deg,#00ff88,${w52color})"></div><div class="w52-marker" style="left:calc(${w52pct}% - 1px)"></div></div>`:'<span style="color:#444;font-size:10px">N/A</span>'}</div><div class="div-row"><span class="div-label">DIVIDEND YIELD</span><span class="div-value" style="color:${s.dividendYield>4?g:s.dividendYield>2?'#fbbf24':s.dividendYield?'#888':'#444'}">${s.dividendYield?s.dividendYield.toFixed(2)+'%':'—'}</span></div><div class="signal-tags">${s.signals.map(sig=>`<span class="signal-tag">◆ ${sig}</span>`).join('')}</div><div class="indicators">${s.rsi!=null?`<div class="ind"><div class="ind-label">RSI(14)</div><div class="ind-val" style="color:${rsiColor}">${s.rsi.toFixed(1)}</div></div>`:''}<div class="ind"><div class="ind-label">VOL</div><div class="ind-val" style="color:${s.volSpike>1.5?'#fbbf24':'#555'}">${s.volSpike.toFixed(1)}x</div></div><div class="ind"><div class="ind-label">5D MOM</div><div class="ind-val" style="color:${s.mom5>0?g:r}">${s.mom5>0?'+':''}${s.mom5.toFixed(1)}%</div></div><div class="ind"><div class="ind-label">SCORE</div><div class="ind-val" style="color:#a5b4fc">${s.score}</div></div></div><div class="conf-row"><span class="conf-label">CONFIDENCE</span><div class="conf-bar-bg"><div class="conf-bar" style="width:${s.confidence}%;background:${confColor}"></div></div><span class="conf-pct">${s.confidence}%</span></div><button class="log-btn ${logged?'logged':''}" onclick="logTrade('${s.ticker}','${s.entry}','${s.sector}')">${logged?'✓ TRADE LOGGED':`▲ LOG BUY @ $${s.entry}`}</button></div>`;
 }
 
-function switchTab(tab){
-  activeTab=tab;
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===(tab==='top10'?0:1)));
+function switchResultTab(tab){
+  activeResultTab=tab;
+  document.querySelectorAll('.result-tab').forEach((t,i)=>t.classList.toggle('active',i===(tab==='top10'?0:1)));
   document.getElementById('top10Container').style.display=tab==='top10'?'block':'none';
   document.getElementById('tableWrap').style.display=tab==='all'?'block':'none';
 }
 
+// ── Performance Tab ───────────────────────────────────────────────────────────
+function getResultStyle(result) {
+  const map = {
+    'TARGET_HIT': {bg:'rgba(0,255,136,.15)',  color:'#00ff88', label:'🎯 TARGET HIT'},
+    'ENTRY_HIT':  {bg:'rgba(251,191,36,.1)',  color:'#fbbf24', label:'✅ ENTRY HIT'},
+    'STOP_HIT':   {bg:'rgba(255,68,68,.12)',  color:'#ff5555', label:'🛑 STOP HIT'},
+    'MIXED':      {bg:'rgba(167,139,250,.15)',color:'#c4b5fd', label:'⚡ MIXED'},
+    'NO_ENTRY':   {bg:'rgba(255,255,255,.04)',color:'#666',    label:'⏸ NO ENTRY'},
+    'OPEN':       {bg:'rgba(99,102,241,.1)',  color:'#a5b4fc', label:'🔄 OPEN'},
+  };
+  return map[result] || map['OPEN'];
+}
+
+async function loadVerification() {
+  const container=document.getElementById('verificationContainer');
+  container.innerHTML='<div style="text-align:center;color:#444;padding:20px;font-size:12px">Loading...</div>';
+  try {
+    const res=await fetch('/api/verification?days=7');
+    const data=await res.json();
+    if(!data.success||!data.data.length){
+      container.innerHTML=`<div style="text-align:center;padding:30px">
+        <div style="font-size:30px;margin-bottom:12px">📊</div>
+        <div style="color:#555;font-size:13px">No verification data yet</div>
+        <div style="color:#333;font-size:11px;margin-top:8px">Verifications run automatically at 8:30 AM AEST after NYSE closes</div>
+        <button onclick="fetch('/api/verify-now')" style="margin-top:14px;padding:8px 16px;border-radius:6px;border:1px solid rgba(0,255,136,.2);background:rgba(0,255,136,.08);color:#00ff88;font-size:11px;cursor:pointer">▶ Run Verification Now</button>
+      </div>`;
+      return;
+    }
+
+    // Calculate summary stats
+    const total=data.data.length;
+    const targetHit=data.data.filter(d=>d.result==='TARGET_HIT').length;
+    const entryHit=data.data.filter(d=>['ENTRY_HIT','TARGET_HIT'].includes(d.result)).length;
+    const stopHit=data.data.filter(d=>d.result==='STOP_HIT').length;
+    document.getElementById('perfTargetHit').textContent=`${targetHit} (${Math.round(targetHit/total*100)}%)`;
+    document.getElementById('perfEntryHit').textContent=`${entryHit} (${Math.round(entryHit/total*100)}%)`;
+    document.getElementById('perfStopHit').textContent=`${stopHit} (${Math.round(stopHit/total*100)}%)`;
+    document.getElementById('perfTotal').textContent=total;
+
+    // Group by date
+    const byDate={};
+    data.data.forEach(d=>{
+      if(!byDate[d.scan_date]) byDate[d.scan_date]=[];
+      byDate[d.scan_date].push(d);
+    });
+
+    container.innerHTML=Object.entries(byDate).sort((a,b)=>b[0].localeCompare(a[0])).map(([date,rows])=>{
+      const dateObj=new Date(date);
+      const dateStr=dateObj.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'});
+      const dayTarget=rows.filter(r=>r.result==='TARGET_HIT').length;
+      const dayStop=rows.filter(r=>r.result==='STOP_HIT').length;
+      return`<div class="verify-card">
+        <div class="verify-header">
+          <span class="verify-date">📅 ${dateStr}</span>
+          <span style="font-size:11px;color:#888">${dayTarget} targets hit · ${dayStop} stopped out · ${rows.length} signals</span>
+        </div>
+        <div class="verify-table-head">
+          <span>TICKER</span><span>SECTOR</span>
+          <span>DAY HIGH</span><span>DAY LOW</span>
+          <span>ENTRY</span><span>TARGET</span><span>STOP</span>
+          <span>RESULT</span>
+        </div>
+        ${rows.map(r=>{
+          const rs=getResultStyle(r.result);
+          const c=sc(r.sector||'Technology');
+          return`<div class="verify-row">
+            <span style="color:#e0e0e0;font-weight:700">${r.ticker}</span>
+            <span style="font-size:8px;padding:1px 5px;border-radius:3px;background:${c.bg};color:${c.text}">${r.sector||'—'}</span>
+            <span style="color:#00ff88">$${r.day_high?.toFixed(2)||'—'}</span>
+            <span style="color:#ff5555">$${r.day_low?.toFixed(2)||'—'}</span>
+            <span style="color:#e0e0e0">$${r.entry_price?.toFixed(2)||'—'}</span>
+            <span style="color:#00ff88">$${r.target_price?.toFixed(2)||'—'}</span>
+            <span style="color:#ff5555">$${r.stop_price?.toFixed(2)||'—'}</span>
+            <span class="result-badge" style="background:${rs.bg};color:${rs.color}">${rs.label}</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }).join('');
+  } catch(e) {
+    container.innerHTML=`<div style="text-align:center;color:#ff9999;padding:20px">Error loading verifications: ${e.message}</div>`;
+  }
+}
+
+// ── History Tab ───────────────────────────────────────────────────────────────
+async function loadHistory() {
+  const container=document.getElementById('historyContainer');
+  container.innerHTML='<div style="text-align:center;color:#444;padding:20px;font-size:12px">Loading...</div>';
+  try {
+    const res=await fetch('/api/history?days=14');
+    const data=await res.json();
+    if(!data.success||!data.data.length){
+      container.innerHTML='<div style="text-align:center;color:#444;padding:30px;font-size:12px">No history yet — signals are saved after each scan.</div>';
+      return;
+    }
+    // Group by date
+    const byDate={};
+    data.data.forEach(d=>{ if(!byDate[d.scan_date])byDate[d.scan_date]=[]; byDate[d.scan_date].push(d); });
+    container.innerHTML=Object.entries(byDate).sort((a,b)=>b[0].localeCompare(a[0])).map(([date,rows])=>{
+      const dateObj=new Date(date);
+      const dateStr=dateObj.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'});
+      return`<div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px;margin-bottom:10px">
+        <div style="font-size:9px;color:#555;letter-spacing:2px;font-weight:700;margin-bottom:10px">📅 ${dateStr} — ${rows.length} signals saved</div>
+        ${rows.map((r,i)=>{
+          const c=sc(r.sector||'Technology');
+          return`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:${i<rows.length-1?'1px solid rgba(255,255,255,.03)':'none'}">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:13px;font-weight:700;color:#e0e0e0;font-family:'Space Mono',monospace;min-width:50px">${r.ticker}</span>
+              <span style="font-size:8px;padding:1px 6px;border-radius:3px;background:${c.bg};color:${c.text}">${r.sector}</span>
+            </div>
+            <div style="display:flex;gap:12px;font-size:11px;font-family:'Space Mono',monospace">
+              <span style="color:#888">Entry: <span style="color:#e0e0e0">$${r.entry_price}</span></span>
+              <span style="color:#888">Target: <span style="color:#00ff88">$${r.target_price}</span></span>
+              <span style="color:#888">Stop: <span style="color:#ff5555">$${r.stop_price}</span></span>
+              <span style="color:#a5b4fc">Score: ${r.score}</span>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }).join('');
+  } catch(e) {
+    container.innerHTML=`<div style="text-align:center;color:#ff9999;padding:20px">Error: ${e.message}</div>`;
+  }
+}
+
+// ── Trade Log ─────────────────────────────────────────────────────────────────
 function logTrade(ticker,price,sector){
   if(loggedSet.has(ticker))return;
   loggedSet.add(ticker);
