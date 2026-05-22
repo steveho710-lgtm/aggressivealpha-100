@@ -416,13 +416,13 @@ async function runScan() {
 
 // ── Schedulers ────────────────────────────────────────────────────────────────
 // Daily scan: 1:00 AM AEST = 3:00 PM UTC Mon–Fri
-cron.schedule("0 15 * * 1-5", ()=>{ console.log("⏰ Auto-scan triggered"); runScan(); }, {timezone:"UTC"});
+cron.schedule("0 14 * * 2-6", ()=>{ console.log("⏰ Auto-scan triggered (10AM EST / 12AM AEST next day)"); runScan(); }, {timezone:"UTC"});
 
 // Verification: 8:30 AM AEST = 10:30 PM UTC (30 min after NYSE closes at 4PM ET = 8AM AEST)
-cron.schedule("30 22 * * 1-5", ()=>{ console.log("⏰ Verification triggered"); runVerification(); }, {timezone:"UTC"});
+cron.schedule("30 20 * * 2-6", ()=>{ console.log("⏰ Verification triggered (4:30PM EDT / 6:30AM AEST)"); runVerification(); }, {timezone:"UTC"});
 
-console.log("⏰ Scan scheduled: 1:00 AM AEST (Mon–Fri)");
-console.log("⏰ Verification scheduled: 8:30 AM AEST (Mon–Fri)");
+console.log("⏰ Scan scheduled: 10:00 AM EDT daily (Mon–Fri NYSE)");
+console.log("⏰ Verification scheduled: 4:30 PM EDT daily (30min after NYSE close)");
 
 // ── API Routes ────────────────────────────────────────────────────────────────
 
