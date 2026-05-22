@@ -201,6 +201,35 @@ async function fetchHistory(ticker) {
   };
 }
 
+
+// ── Fetch analyst price targets from Yahoo Finance ────────────────────────────
+async function fetchAnalystTargets(ticker) {
+  try {
+    const url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(ticker)}?modules=financialData,recommendationTrend`;
+    const data = await fetchYahoo(url);
+    const fin  = data?.quoteSummary?.result?.[0]?.financialData;
+    const rec  = data?.quoteSummary?.result?.[0]?.recommendationTrend?.trend?.[0];
+    if (!fin) return null;
+    const targetMean   = fin.targetMeanPrice?.raw   || null;
+    const targetHigh   = fin.targetHighPrice?.raw   || null;
+    const targetLow    = fin.targetLowPrice?.raw    || null;
+    const targetMedian = fin.targetMedianPrice?.raw || null;
+    const numAnalysts  = fin.numberOfAnalystOpinions?.raw || null;
+    const recommendation = fin.recommendationKey || null; // buy, hold, sell, strongBuy etc
+    if (!targetMean) return null;
+    return {
+      targetMean:    parseFloat(targetMean.toFixed(2)),
+      targetHigh:    parseFloat(targetHigh?.toFixed(2)||targetMean.toFixed(2)),
+      targetLow:     parseFloat(targetLow?.toFixed(2)||targetMean.toFixed(2)),
+      targetMedian:  parseFloat(targetMedian?.toFixed(2)||targetMean.toFixed(2)),
+      numAnalysts:   numAnalysts,
+      recommendation: recommendation,
+    };
+  } catch(e) {
+    return null;
+  }
+}
+
 // ── Indicators ────────────────────────────────────────────────────────────────
 const calcRSI=(c,n=14)=>{if(c.length<n+1)return null;let g=0,l=0;for(let i=c.length-n;i<c.length;i++){const d=c[i]-c[i-1];d>0?g+=d:l-=d;}return 100-100/(1+g/(l||.001));};
 const calcEMA=(c,n)=>{if(c.length<n)return null;const k=2/(n+1);let e=c.slice(0,n).reduce((a,b)=>a+b,0)/n;for(let i=n;i<c.length;i++)e=c[i]*k+e*(1-k);return e;};
@@ -241,6 +270,8 @@ function scoreStock(stock, data) {
     rr:(targBuf/stopBuf).toFixed(1),rsi:rsi?parseFloat(rsi.toFixed(1)):null,
     dayChg:parseFloat(dayChg.toFixed(2)),mom5:parseFloat(mom5.toFixed(1)),
     volSpike:parseFloat(vs.toFixed(1)),w52Pos:parseFloat(w52P.toFixed(1)),
+    // analyst targets added separately after scoring
+    analystTargets: null,
   };
 }
 
@@ -358,6 +389,29 @@ async function runScan() {
     }
     scanProgress=i+1;
     if(i<STOCKS.length-1) await randomDelay();
+  }
+
+  // ANALYST TARGETS: fetch for top 20 after pass 1 (sorted by score)
+  // Only top 20 to avoid too many extra requests
+  const topCandidates = results.sort((a,b)=>b.score-a.score).slice(0,20);
+  console.log(`\n🎯 Fetching analyst targets for top ${topCandidates.length} stocks...`);
+  for (let i=0; i<topCandidates.length; i++) {
+    const stock = topCandidates[i];
+    try {
+      const targets = await fetchAnalystTargets(stock.ticker);
+      if (targets) {
+        // Find and update the stock in results
+        const idx = results.findIndex(r => r.ticker === stock.ticker);
+        if (idx >= 0) {
+          results[idx].analystTargets = targets;
+          const upside = stock.price ? (((targets.targetMean - stock.price) / stock.price) * 100).toFixed(1) : null;
+          console.log(`  ✅ ${stock.ticker}: mean $${targets.targetMean} | ${targets.recommendation} | ${targets.numAnalysts} analysts | upside ${upside}%`);
+        }
+      }
+    } catch(e) {
+      console.log(`  ❌ Analyst ${stock.ticker}: ${e.message}`);
+    }
+    await sleep(800); // small delay between analyst calls
   }
   console.log(`\n📊 Pass 1 done — ${results.length} ok, ${failedStocks.length} failed`);
 
