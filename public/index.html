@@ -436,6 +436,46 @@ function renderResults(results){
   }).join('');
 }
 
+
+// ── Analyst panel HTML ────────────────────────────────────────────────────────
+function analystPanelHTML(a, price) {
+  if (!a) return '';
+  const recMap = {
+    'strongBuy':  { label:'STRONG BUY',  color:'#00ff88', bg:'rgba(0,255,136,.12)' },
+    'buy':        { label:'BUY',         color:'#00cc66', bg:'rgba(0,204,102,.10)' },
+    'hold':       { label:'HOLD',        color:'#fbbf24', bg:'rgba(251,191,36,.10)' },
+    'sell':       { label:'SELL',        color:'#ff5555', bg:'rgba(255,85,85,.10)' },
+    'strongSell': { label:'STRONG SELL', color:'#ff2222', bg:'rgba(255,34,34,.12)' },
+  };
+  const rec = recMap[a.recommendation] || { label: (a.recommendation||'N/A').toUpperCase(), color:'#888', bg:'rgba(255,255,255,.05)' };
+  const upside = price && a.targetMean ? (((a.targetMean - price) / price) * 100).toFixed(1) : null;
+  const upsideColor = upside > 0 ? '#00ff88' : upside < 0 ? '#ff5555' : '#888';
+  const barPct = a.targetHigh > a.targetLow
+    ? Math.min(100, Math.max(0, ((price - a.targetLow) / (a.targetHigh - a.targetLow)) * 100))
+    : 50;
+
+  return `<div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:10px 12px;margin-bottom:11px">
+    <div style="font-size:9px;color:#555;letter-spacing:1.5px;font-weight:700;margin-bottom:8px">ANALYST CONSENSUS</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;font-weight:800;padding:3px 10px;border-radius:5px;background:${rec.bg};color:${rec.color};letter-spacing:.5px">${rec.label}</span>
+        <span style="font-size:10px;color:#555;font-family:'Space Mono',monospace">${a.numAnalysts ? a.numAnalysts+' analysts' : ''}</span>
+      </div>
+      ${upside ? `<span style="font-size:13px;font-weight:700;color:${upsideColor};font-family:'Space Mono',monospace">${upside > 0 ? '+' : ''}${upside}% to mean</span>` : ''}
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:9px;color:#555;font-family:'Space Mono',monospace">
+      <span>Low $${a.targetLow}</span>
+      <span style="font-weight:700;color:#e0e0e0">Mean $${a.targetMean}</span>
+      <span>High $${a.targetHigh}</span>
+    </div>
+    <div style="height:4px;background:rgba(255,255,255,.06);border-radius:2px;position:relative;overflow:hidden">
+      <div style="position:absolute;left:0;top:0;height:100%;width:${barPct}%;background:linear-gradient(90deg,#6366f1,#a5b4fc);border-radius:2px"></div>
+      <div style="position:absolute;top:-1px;bottom:-1px;left:calc(${barPct}% - 1px);width:3px;background:#fff;border-radius:2px"></div>
+    </div>
+    <div style="font-size:8px;color:#333;margin-top:4px;text-align:center">Current price position vs analyst range</div>
+  </div>`;
+}
+
 function signalCardHTML(s,rank){
   const c=sc(s.sector),g='#00ff88',r='#ff5555';
   const rnkBg=rank===1?'linear-gradient(135deg,#fbbf24,#f59e0b)':rank===2?'linear-gradient(135deg,#e5e7eb,#9ca3af)':rank===3?'linear-gradient(135deg,#cd7c2f,#92400e)':'rgba(255,255,255,.06)';
@@ -445,7 +485,8 @@ function signalCardHTML(s,rank){
   const confColor=s.confidence>70?'linear-gradient(90deg,#00bb55,#00ff88)':s.confidence>50?'linear-gradient(90deg,#d97706,#fbbf24)':'linear-gradient(90deg,#cc2222,#ff5555)';
   const rsiColor=s.rsi&&s.rsi<40?g:s.rsi&&s.rsi>60?r:'#e0e0e0';
   const logged=loggedSet.has(s.ticker);
-  return`<div class="signal-card"><div class="card-accent"></div><div class="rank-badge" style="background:${rnkBg};color:${rnkC}">#${rank}</div><div class="card-header"><div class="card-ticker-row"><span class="card-ticker">${s.ticker}</span><span class="sector-pill" style="background:${c.bg};color:${c.text};border:1px solid ${c.border}">${s.sector}</span><span class="buy-pill">▲ BUY</span></div><div class="card-name">${s.name}</div></div><div class="live-price"><span class="price-badge">📡 Live: $${s.price}<span style="margin-left:8px;color:${s.dayChg>=0?g:r}">${s.dayChg>=0?'+':''}${s.dayChg}% today</span></span></div><div class="price-grid"><div class="price-box"><div class="price-box-label">ENTRY</div><div class="price-box-val" style="color:#e0e0e0">$${s.entry}</div></div><div class="price-box"><div class="price-box-label">TARGET</div><div class="price-box-val" style="color:${g}">$${s.target}</div></div><div class="price-box"><div class="price-box-label">STOP</div><div class="price-box-val" style="color:${r}">$${s.stop}</div></div></div><div class="badges"><span class="badge" style="color:${g};background:rgba(0,255,136,.08)">+${s.upside}% target</span><span class="badge" style="color:${r};background:rgba(255,70,70,.08)">-${s.downside}% stop</span><span class="badge" style="color:#888;background:rgba(255,255,255,.04)">R/R ${s.rr}:1</span></div><div class="w52-wrap"><div class="w52-title">52-WEEK RANGE</div>${s.week52Low&&s.week52High?`<div class="w52-labels"><span>$${s.week52Low}</span><span style="font-size:9px;font-weight:700;color:${w52color};font-family:'Space Mono',monospace">${w52pct.toFixed(0)}% of range</span><span>$${s.week52High}</span></div><div class="w52-bar-bg"><div class="w52-bar-fill" style="width:${w52pct}%;background:linear-gradient(90deg,#00ff88,${w52color})"></div><div class="w52-marker" style="left:calc(${w52pct}% - 1px)"></div></div>`:'<span style="color:#444;font-size:10px">N/A</span>'}</div><div class="div-row"><span class="div-label">DIVIDEND YIELD</span><span class="div-value" style="color:${s.dividendYield>4?g:s.dividendYield>2?'#fbbf24':s.dividendYield?'#888':'#444'}">${s.dividendYield?s.dividendYield.toFixed(2)+'%':'—'}</span></div><div class="signal-tags">${s.signals.map(sig=>`<span class="signal-tag">◆ ${sig}</span>`).join('')}</div><div class="indicators">${s.rsi!=null?`<div class="ind"><div class="ind-label">RSI(14)</div><div class="ind-val" style="color:${rsiColor}">${s.rsi.toFixed(1)}</div></div>`:''}<div class="ind"><div class="ind-label">VOL</div><div class="ind-val" style="color:${s.volSpike>1.5?'#fbbf24':'#555'}">${s.volSpike.toFixed(1)}x</div></div><div class="ind"><div class="ind-label">5D MOM</div><div class="ind-val" style="color:${s.mom5>0?g:r}">${s.mom5>0?'+':''}${s.mom5.toFixed(1)}%</div></div><div class="ind"><div class="ind-label">SCORE</div><div class="ind-val" style="color:#a5b4fc">${s.score}</div></div></div><div class="conf-row"><span class="conf-label">CONFIDENCE</span><div class="conf-bar-bg"><div class="conf-bar" style="width:${s.confidence}%;background:${confColor}"></div></div><span class="conf-pct">${s.confidence}%</span></div><button class="log-btn ${logged?'logged':''}" onclick="logTrade('${s.ticker}','${s.entry}','${s.sector}')">${logged?'✓ TRADE LOGGED':`▲ LOG BUY @ $${s.entry}`}</button></div>`;
+  return`<div class="signal-card"><div class="card-accent"></div><div class="rank-badge" style="background:${rnkBg};color:${rnkC}">#${rank}</div><div class="card-header"><div class="card-ticker-row"><span class="card-ticker">${s.ticker}</span><span class="sector-pill" style="background:${c.bg};color:${c.text};border:1px solid ${c.border}">${s.sector}</span><span class="buy-pill">▲ BUY</span></div><div class="card-name">${s.name}</div></div><div class="live-price"><span class="price-badge">📡 Live: $${s.price}<span style="margin-left:8px;color:${s.dayChg>=0?g:r}">${s.dayChg>=0?'+':''}${s.dayChg}% today</span></span></div><div class="price-grid"><div class="price-box"><div class="price-box-label">ENTRY</div><div class="price-box-val" style="color:#e0e0e0">$${s.entry}</div></div><div class="price-box"><div class="price-box-label">TARGET</div><div class="price-box-val" style="color:${g}">$${s.target}</div></div><div class="price-box"><div class="price-box-label">STOP</div><div class="price-box-val" style="color:${r}">$${s.stop}</div></div></div><div class="badges"><span class="badge" style="color:${g};background:rgba(0,255,136,.08)">+${s.upside}% target</span><span class="badge" style="color:${r};background:rgba(255,70,70,.08)">-${s.downside}% stop</span><span class="badge" style="color:#888;background:rgba(255,255,255,.04)">R/R ${s.rr}:1</span></div><div class="w52-wrap"><div class="w52-title">52-WEEK RANGE</div>${s.week52Low&&s.week52High?`<div class="w52-labels"><span>$${s.week52Low}</span><span style="font-size:9px;font-weight:700;color:${w52color};font-family:'Space Mono',monospace">${w52pct.toFixed(0)}% of range</span><span>$${s.week52High}</span></div><div class="w52-bar-bg"><div class="w52-bar-fill" style="width:${w52pct}%;background:linear-gradient(90deg,#00ff88,${w52color})"></div><div class="w52-marker" style="left:calc(${w52pct}% - 1px)"></div></div>`:'<span style="color:#444;font-size:10px">N/A</span>'}</div><div class="div-row"><span class="div-label">DIVIDEND YIELD</span><span class="div-value" style="color:${s.dividendYield>4?g:s.dividendYield>2?'#fbbf24':s.dividendYield?'#888':'#444'}">${s.dividendYield?s.dividendYield.toFixed(2)+'%':'—'}</span></div>
+    ${s.analystTargets ? analystPanelHTML(s.analystTargets, s.price) : ''}<div class="signal-tags">${s.signals.map(sig=>`<span class="signal-tag">◆ ${sig}</span>`).join('')}</div><div class="indicators">${s.rsi!=null?`<div class="ind"><div class="ind-label">RSI(14)</div><div class="ind-val" style="color:${rsiColor}">${s.rsi.toFixed(1)}</div></div>`:''}<div class="ind"><div class="ind-label">VOL</div><div class="ind-val" style="color:${s.volSpike>1.5?'#fbbf24':'#555'}">${s.volSpike.toFixed(1)}x</div></div><div class="ind"><div class="ind-label">5D MOM</div><div class="ind-val" style="color:${s.mom5>0?g:r}">${s.mom5>0?'+':''}${s.mom5.toFixed(1)}%</div></div><div class="ind"><div class="ind-label">SCORE</div><div class="ind-val" style="color:#a5b4fc">${s.score}</div></div></div><div class="conf-row"><span class="conf-label">CONFIDENCE</span><div class="conf-bar-bg"><div class="conf-bar" style="width:${s.confidence}%;background:${confColor}"></div></div><span class="conf-pct">${s.confidence}%</span></div><button class="log-btn ${logged?'logged':''}" onclick="logTrade('${s.ticker}','${s.entry}','${s.sector}')">${logged?'✓ TRADE LOGGED':`▲ LOG BUY @ $${s.entry}`}</button></div>`;
 }
 
 function switchResultTab(tab){
