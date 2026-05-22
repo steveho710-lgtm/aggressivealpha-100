@@ -234,31 +234,75 @@ function scoreStock(stock, data) {
   };
 }
 
-// ── Core scan (always runs in background) ─────────────────────────────────────
+// ── Core scan with 3-pass retry logic ────────────────────────────────────────
 async function runScan() {
   if (scanInProgress) { console.log("⏳ Already scanning"); return; }
   scanInProgress=true; scanProgress=0;
-  console.log(`\n🔍 Background scan started — ${STOCKS.length} stocks — ${new Date().toISOString()}`);
-  const results=[],failed=[];
-  for (let i=0;i<STOCKS.length;i++) {
+  console.log(`\n🔍 Scan started — ${STOCKS.length} stocks — ${new Date().toISOString()}`);
+
+  const results=[], failedStocks=[];
+
+  // PASS 1: scan all stocks
+  console.log("📡 Pass 1: scanning all stocks...");
+  for (let i=0; i<STOCKS.length; i++) {
     const stock=STOCKS[i];
     try {
       const data=await fetchHistory(stock.ticker);
       const scored=scoreStock(stock,data);
-      if(scored){results.push(scored);console.log(`  ✅ [${i+1}/${STOCKS.length}] ${stock.ticker} $${scored.price} score:${scored.score}`);}
+      if(scored){ results.push(scored); console.log(`  ✅ [${i+1}/${STOCKS.length}] ${stock.ticker} $${scored.price}`); }
     } catch(e) {
       console.log(`  ❌ [${i+1}/${STOCKS.length}] ${stock.ticker}: ${e.message}`);
-      failed.push(stock.ticker);
+      failedStocks.push(stock);
     }
     scanProgress=i+1;
     if(i<STOCKS.length-1) await randomDelay();
   }
+  console.log(`\n📊 Pass 1 done — ${results.length} ok, ${failedStocks.length} failed`);
+
+  // PASS 2: retry failed stocks after 15s pause
+  if (failedStocks.length > 0) {
+    console.log(`\n🔄 Pass 2: retrying ${failedStocks.length} stocks in 15s...`);
+    await sleep(15000);
+    const stillFailed=[];
+    for (let i=0; i<failedStocks.length; i++) {
+      const stock=failedStocks[i];
+      try {
+        const data=await fetchHistory(stock.ticker);
+        const scored=scoreStock(stock,data);
+        if(scored){ results.push(scored); console.log(`  ✅ RETRY ${stock.ticker} $${scored.price}`); }
+      } catch(e) {
+        console.log(`  ❌ RETRY ${stock.ticker}: ${e.message}`);
+        stillFailed.push(stock);
+      }
+      if(i<failedStocks.length-1) await randomDelay();
+    }
+    console.log(`\n📊 Pass 2 done — recovered ${failedStocks.length-stillFailed.length}, still failed ${stillFailed.length}`);
+
+    // PASS 3: final retry for remaining failures (max 20)
+    if (stillFailed.length>0 && stillFailed.length<=20) {
+      console.log(`\n🔄 Pass 3: final retry for ${stillFailed.length} stocks in 20s...`);
+      await sleep(20000);
+      for (let i=0; i<stillFailed.length; i++) {
+        const stock=stillFailed[i];
+        try {
+          const data=await fetchHistory(stock.ticker);
+          const scored=scoreStock(stock,data);
+          if(scored){ results.push(scored); console.log(`  ✅ FINAL ${stock.ticker}`); }
+        } catch(e) {
+          console.log(`  ❌ FINAL ${stock.ticker}: ${e.message}`);
+        }
+        if(i<stillFailed.length-1) await randomDelay();
+      }
+    }
+  }
+
   if(results.length>0){
-    cachedResults={success:true,results:results.sort((a,b)=>b.score-a.score),failed,total:STOCKS.length,scannedAt:new Date().toISOString()};
+    const failedTickers=STOCKS.map(s=>s.ticker).filter(t=>!results.find(r=>r.ticker===t));
+    cachedResults={success:true,results:results.sort((a,b)=>b.score-a.score),failed:failedTickers,total:STOCKS.length,scannedAt:new Date().toISOString()};
     cacheTime=new Date();
-    console.log(`✅ Scan done — ${results.length} scored, ${failed.length} failed`);
+    console.log(`\n✅ All passes complete — ${results.length}/${STOCKS.length} stocks scored`);
   } else {
-    console.log("❌ No results");
+    console.log("❌ No results from any pass");
   }
   scanInProgress=false;
 }
