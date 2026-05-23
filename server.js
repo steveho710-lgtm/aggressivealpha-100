@@ -13,6 +13,10 @@ const SUPABASE_URL = "https://dfzdestrmsxbtsealnra.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmemRlc3RybXN4YnRzZWFsbnJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MzYzNjQsImV4cCI6MjA5NTAxMjM2NH0.pI7fhvfI7GaHX-GhnSCBgCnndTupRdfsm3mQw_K2h3s";
 const supabase   = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// ── FMP API ───────────────────────────────────────────────────────────────────
+const FMP_KEY = "JVN8yOeV9jc0SUWpN0xLsEYa40fwh3QV";
+const FMP_URL = "https://financialmodelingprep.com/api/v4";
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -202,40 +206,93 @@ async function fetchHistory(ticker) {
 }
 
 
-// ── Fetch analyst price targets from Yahoo Finance v7 quote ──────────────────
-// Uses the less-restricted v7/finance/quote endpoint which returns analyst data
+// ── Fetch analyst price targets from FMP ─────────────────────────────────────
 async function fetchAnalystTargets(ticker) {
   try {
-    // Try v7 quote endpoint first — less blocked than quoteSummary
-    const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(ticker)}&fields=targetMeanPrice,targetHighPrice,targetLowPrice,targetMedianPrice,numberOfAnalystOpinions,recommendationKey,recommendationMean`;
-    const data = await fetchYahoo(url);
-    const q = data?.quoteResponse?.result?.[0];
-    if (q && q.targetMeanPrice) {
-      return {
-        targetMean:     parseFloat((q.targetMeanPrice).toFixed(2)),
-        targetHigh:     parseFloat((q.targetHighPrice || q.targetMeanPrice).toFixed(2)),
-        targetLow:      parseFloat((q.targetLowPrice  || q.targetMeanPrice).toFixed(2)),
-        targetMedian:   parseFloat((q.targetMedianPrice || q.targetMeanPrice).toFixed(2)),
-        numAnalysts:    q.numberOfAnalystOpinions || null,
-        recommendation: q.recommendationKey || null,
-      };
-    }
-    // Fallback: try quoteSummary with different params
-    const url2 = `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(ticker)}?modules=financialData&corsDomain=finance.yahoo.com&formatted=false`;
-    const data2 = await fetchYahoo(url2);
-    const fin = data2?.quoteSummary?.result?.[0]?.financialData;
-    if (!fin || !fin.targetMeanPrice) return null;
+    // FMP price target consensus endpoint
+    const url = `https://financialmodelingprep.com/api/v4/price-target-consensus?symbol=${encodeURIComponent(ticker)}&apikey=${FMP_KEY}`;
+    const res = await new Promise((resolve, reject) => {
+      https.get(url, { headers:{"User-Agent":"Mozilla/5.0"} }, (res) => {
+        const chunks=[];
+        res.on("data", c=>chunks.push(c));
+        res.on("end", ()=>{ try{resolve(JSON.parse(Buffer.concat(chunks).toString()));}catch(e){reject(e);} });
+      }).on("error",reject).setTimeout(10000,function(){this.destroy();reject(new Error("Timeout"));});
+    });
+    if (!res || !res[0]) return null;
+    const d = res[0];
+    if (!d.targetConsensus) return null;
+
+    // FMP analyst grades for recommendation
+    const url2 = `https://financialmodelingprep.com/api/v3/grade/${encodeURIComponent(ticker)}?limit=10&apikey=${FMP_KEY}`;
+    let recommendation = null;
+    try {
+      const grades = await new Promise((resolve, reject) => {
+        https.get(url2, { headers:{"User-Agent":"Mozilla/5.0"} }, (res) => {
+          const chunks=[];
+          res.on("data", c=>chunks.push(c));
+          res.on("end", ()=>{ try{resolve(JSON.parse(Buffer.concat(chunks).toString()));}catch(e){reject(e);} });
+        }).on("error",reject).setTimeout(10000,function(){this.destroy();reject(new Error("Timeout"));});
+      });
+      if (grades && grades[0]) {
+        const latest = grades[0].newGrade?.toLowerCase() || '';
+        if (latest.includes('strong buy') || latest.includes('outperform') || latest.includes('overweight')) recommendation = 'strongBuy';
+        else if (latest.includes('buy') || latest.includes('positive')) recommendation = 'buy';
+        else if (latest.includes('hold') || latest.includes('neutral') || latest.includes('market perform')) recommendation = 'hold';
+        else if (latest.includes('sell') || latest.includes('underperform') || latest.includes('underweight')) recommendation = 'sell';
+        else recommendation = 'hold';
+      }
+    } catch(e) {}
+
     return {
-      targetMean:     parseFloat(fin.targetMeanPrice.toFixed(2)),
-      targetHigh:     parseFloat((fin.targetHighPrice || fin.targetMeanPrice).toFixed(2)),
-      targetLow:      parseFloat((fin.targetLowPrice  || fin.targetMeanPrice).toFixed(2)),
-      targetMedian:   parseFloat((fin.targetMedianPrice || fin.targetMeanPrice).toFixed(2)),
-      numAnalysts:    fin.numberOfAnalystOpinions || null,
-      recommendation: fin.recommendationKey || null,
+      targetMean:     parseFloat((d.targetConsensus||0).toFixed(2)),
+      targetHigh:     parseFloat((d.targetHigh||d.targetConsensus||0).toFixed(2)),
+      targetLow:      parseFloat((d.targetLow||d.targetConsensus||0).toFixed(2)),
+      targetMedian:   parseFloat((d.targetMedian||d.targetConsensus||0).toFixed(2)),
+      numAnalysts:    d.numberOfAnalysts || null,
+      recommendation: recommendation || 'hold',
     };
   } catch(e) {
     console.log(`  ⚠️  Analyst ${ticker}: ${e.message}`);
     return null;
+  }
+}
+
+// ── Fetch earnings calendar from FMP ─────────────────────────────────────────
+// Returns map of ticker -> {date, time, daysUntil}
+async function fetchEarningsCalendar(tickers) {
+  try {
+    const today = new Date().toISOString().split("T")[0];
+    const future = new Date(Date.now() + 30*24*3600*1000).toISOString().split("T")[0];
+    const url = `https://financialmodelingprep.com/api/v3/earning_calendar?from=${today}&to=${future}&apikey=${FMP_KEY}`;
+    const data = await new Promise((resolve, reject) => {
+      https.get(url, { headers:{"User-Agent":"Mozilla/5.0"} }, (res) => {
+        const chunks=[];
+        res.on("data", c=>chunks.push(c));
+        res.on("end", ()=>{ try{resolve(JSON.parse(Buffer.concat(chunks).toString()));}catch(e){reject(e);} });
+      }).on("error",reject).setTimeout(15000,function(){this.destroy();reject(new Error("Timeout"));});
+    });
+    if (!Array.isArray(data)) return {};
+    const tickerSet = new Set(tickers);
+    const earnings = {};
+    for (const item of data) {
+      if (!tickerSet.has(item.symbol)) continue;
+      const earningsDate = new Date(item.date);
+      const todayDate    = new Date();
+      const daysUntil    = Math.ceil((earningsDate - todayDate) / (1000*60*60*24));
+      if (daysUntil >= 0 && daysUntil <= 30) {
+        earnings[item.symbol] = {
+          date:      item.date,
+          time:      item.time || null, // 'amc' or 'bmo' or null
+          daysUntil: daysUntil,
+          eps:       item.epsEstimated || null,
+        };
+      }
+    }
+    console.log(`📅 Earnings found for: ${Object.keys(earnings).join(", ") || "none in next 30 days"}`);
+    return earnings;
+  } catch(e) {
+    console.log(`⚠️  Earnings calendar: ${e.message}`);
+    return {};
   }
 }
 
@@ -400,16 +457,24 @@ async function runScan() {
     if(i<STOCKS.length-1) await randomDelay();
   }
 
+  // EARNINGS CALENDAR: fetch for all stocks in one call
+  console.log(`\n📅 Fetching earnings calendar...`);
+  const allTickers = STOCKS.map(s => s.ticker);
+  const earningsMap = await fetchEarningsCalendar(allTickers);
+
+  // Add earnings data to all results
+  for (let i=0; i<results.length; i++) {
+    results[i].earnings = earningsMap[results[i].ticker] || null;
+  }
+
   // ANALYST TARGETS: fetch for top 20 after pass 1 (sorted by score)
-  // Only top 20 to avoid too many extra requests
   const topCandidates = results.sort((a,b)=>b.score-a.score).slice(0,20);
-  console.log(`\n🎯 Fetching analyst targets for top ${topCandidates.length} stocks...`);
+  console.log(`\n🎯 Fetching analyst targets for top ${topCandidates.length} stocks (FMP)...`);
   for (let i=0; i<topCandidates.length; i++) {
     const stock = topCandidates[i];
     try {
       const targets = await fetchAnalystTargets(stock.ticker);
       if (targets) {
-        // Find and update the stock in results
         const idx = results.findIndex(r => r.ticker === stock.ticker);
         if (idx >= 0) {
           results[idx].analystTargets = targets;
@@ -420,7 +485,7 @@ async function runScan() {
     } catch(e) {
       console.log(`  ❌ Analyst ${stock.ticker}: ${e.message}`);
     }
-    await sleep(800); // small delay between analyst calls
+    await sleep(500);
   }
   console.log(`\n📊 Pass 1 done — ${results.length} ok, ${failedStocks.length} failed`);
 
