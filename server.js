@@ -202,30 +202,39 @@ async function fetchHistory(ticker) {
 }
 
 
-// ── Fetch analyst price targets from Yahoo Finance ────────────────────────────
+// ── Fetch analyst price targets from Yahoo Finance v7 quote ──────────────────
+// Uses the less-restricted v7/finance/quote endpoint which returns analyst data
 async function fetchAnalystTargets(ticker) {
   try {
-    const url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(ticker)}?modules=financialData,recommendationTrend`;
+    // Try v7 quote endpoint first — less blocked than quoteSummary
+    const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(ticker)}&fields=targetMeanPrice,targetHighPrice,targetLowPrice,targetMedianPrice,numberOfAnalystOpinions,recommendationKey,recommendationMean`;
     const data = await fetchYahoo(url);
-    const fin  = data?.quoteSummary?.result?.[0]?.financialData;
-    const rec  = data?.quoteSummary?.result?.[0]?.recommendationTrend?.trend?.[0];
-    if (!fin) return null;
-    const targetMean   = fin.targetMeanPrice?.raw   || null;
-    const targetHigh   = fin.targetHighPrice?.raw   || null;
-    const targetLow    = fin.targetLowPrice?.raw    || null;
-    const targetMedian = fin.targetMedianPrice?.raw || null;
-    const numAnalysts  = fin.numberOfAnalystOpinions?.raw || null;
-    const recommendation = fin.recommendationKey || null; // buy, hold, sell, strongBuy etc
-    if (!targetMean) return null;
+    const q = data?.quoteResponse?.result?.[0];
+    if (q && q.targetMeanPrice) {
+      return {
+        targetMean:     parseFloat((q.targetMeanPrice).toFixed(2)),
+        targetHigh:     parseFloat((q.targetHighPrice || q.targetMeanPrice).toFixed(2)),
+        targetLow:      parseFloat((q.targetLowPrice  || q.targetMeanPrice).toFixed(2)),
+        targetMedian:   parseFloat((q.targetMedianPrice || q.targetMeanPrice).toFixed(2)),
+        numAnalysts:    q.numberOfAnalystOpinions || null,
+        recommendation: q.recommendationKey || null,
+      };
+    }
+    // Fallback: try quoteSummary with different params
+    const url2 = `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(ticker)}?modules=financialData&corsDomain=finance.yahoo.com&formatted=false`;
+    const data2 = await fetchYahoo(url2);
+    const fin = data2?.quoteSummary?.result?.[0]?.financialData;
+    if (!fin || !fin.targetMeanPrice) return null;
     return {
-      targetMean:    parseFloat(targetMean.toFixed(2)),
-      targetHigh:    parseFloat(targetHigh?.toFixed(2)||targetMean.toFixed(2)),
-      targetLow:     parseFloat(targetLow?.toFixed(2)||targetMean.toFixed(2)),
-      targetMedian:  parseFloat(targetMedian?.toFixed(2)||targetMean.toFixed(2)),
-      numAnalysts:   numAnalysts,
-      recommendation: recommendation,
+      targetMean:     parseFloat(fin.targetMeanPrice.toFixed(2)),
+      targetHigh:     parseFloat((fin.targetHighPrice || fin.targetMeanPrice).toFixed(2)),
+      targetLow:      parseFloat((fin.targetLowPrice  || fin.targetMeanPrice).toFixed(2)),
+      targetMedian:   parseFloat((fin.targetMedianPrice || fin.targetMeanPrice).toFixed(2)),
+      numAnalysts:    fin.numberOfAnalystOpinions || null,
+      recommendation: fin.recommendationKey || null,
     };
   } catch(e) {
+    console.log(`  ⚠️  Analyst ${ticker}: ${e.message}`);
     return null;
   }
 }
