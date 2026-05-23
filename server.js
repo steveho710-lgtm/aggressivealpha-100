@@ -206,57 +206,6 @@ async function fetchHistory(ticker) {
 }
 
 
-// ── Fetch analyst price targets from FMP ─────────────────────────────────────
-async function fetchAnalystTargets(ticker) {
-  try {
-    // FMP price target consensus endpoint
-    const url = `https://financialmodelingprep.com/api/v4/price-target-consensus?symbol=${encodeURIComponent(ticker)}&apikey=${FMP_KEY}`;
-    const res = await new Promise((resolve, reject) => {
-      https.get(url, { headers:{"User-Agent":"Mozilla/5.0"} }, (res) => {
-        const chunks=[];
-        res.on("data", c=>chunks.push(c));
-        res.on("end", ()=>{ try{resolve(JSON.parse(Buffer.concat(chunks).toString()));}catch(e){reject(e);} });
-      }).on("error",reject).setTimeout(10000,function(){this.destroy();reject(new Error("Timeout"));});
-    });
-    if (!res || !res[0]) return null;
-    const d = res[0];
-    if (!d.targetConsensus) return null;
-
-    // FMP analyst grades for recommendation
-    const url2 = `https://financialmodelingprep.com/api/v3/grade/${encodeURIComponent(ticker)}?limit=10&apikey=${FMP_KEY}`;
-    let recommendation = null;
-    try {
-      const grades = await new Promise((resolve, reject) => {
-        https.get(url2, { headers:{"User-Agent":"Mozilla/5.0"} }, (res) => {
-          const chunks=[];
-          res.on("data", c=>chunks.push(c));
-          res.on("end", ()=>{ try{resolve(JSON.parse(Buffer.concat(chunks).toString()));}catch(e){reject(e);} });
-        }).on("error",reject).setTimeout(10000,function(){this.destroy();reject(new Error("Timeout"));});
-      });
-      if (grades && grades[0]) {
-        const latest = grades[0].newGrade?.toLowerCase() || '';
-        if (latest.includes('strong buy') || latest.includes('outperform') || latest.includes('overweight')) recommendation = 'strongBuy';
-        else if (latest.includes('buy') || latest.includes('positive')) recommendation = 'buy';
-        else if (latest.includes('hold') || latest.includes('neutral') || latest.includes('market perform')) recommendation = 'hold';
-        else if (latest.includes('sell') || latest.includes('underperform') || latest.includes('underweight')) recommendation = 'sell';
-        else recommendation = 'hold';
-      }
-    } catch(e) {}
-
-    return {
-      targetMean:     parseFloat((d.targetConsensus||0).toFixed(2)),
-      targetHigh:     parseFloat((d.targetHigh||d.targetConsensus||0).toFixed(2)),
-      targetLow:      parseFloat((d.targetLow||d.targetConsensus||0).toFixed(2)),
-      targetMedian:   parseFloat((d.targetMedian||d.targetConsensus||0).toFixed(2)),
-      numAnalysts:    d.numberOfAnalysts || null,
-      recommendation: recommendation || 'hold',
-    };
-  } catch(e) {
-    console.log(`  ⚠️  Analyst ${ticker}: ${e.message}`);
-    return null;
-  }
-}
-
 // ── Fetch earnings calendar from FMP ─────────────────────────────────────────
 // Returns map of ticker -> {date, time, daysUntil}
 async function fetchEarningsCalendar(tickers) {
@@ -467,26 +416,7 @@ async function runScan() {
     results[i].earnings = earningsMap[results[i].ticker] || null;
   }
 
-  // ANALYST TARGETS: fetch for top 20 after pass 1 (sorted by score)
-  const topCandidates = results.sort((a,b)=>b.score-a.score).slice(0,20);
-  console.log(`\n🎯 Fetching analyst targets for top ${topCandidates.length} stocks (FMP)...`);
-  for (let i=0; i<topCandidates.length; i++) {
-    const stock = topCandidates[i];
-    try {
-      const targets = await fetchAnalystTargets(stock.ticker);
-      if (targets) {
-        const idx = results.findIndex(r => r.ticker === stock.ticker);
-        if (idx >= 0) {
-          results[idx].analystTargets = targets;
-          const upside = stock.price ? (((targets.targetMean - stock.price) / stock.price) * 100).toFixed(1) : null;
-          console.log(`  ✅ ${stock.ticker}: mean $${targets.targetMean} | ${targets.recommendation} | ${targets.numAnalysts} analysts | upside ${upside}%`);
-        }
-      }
-    } catch(e) {
-      console.log(`  ❌ Analyst ${stock.ticker}: ${e.message}`);
-    }
-    await sleep(500);
-  }
+  // Analyst targets: skipped (no reliable free API available)
   console.log(`\n📊 Pass 1 done — ${results.length} ok, ${failedStocks.length} failed`);
 
   // PASS 2
@@ -645,9 +575,12 @@ app.get("/api/compare", async (req, res) => {
   const symbols = [ticker.toUpperCase(), "SPY", "QQQ", "DIA"];
   const results = {};
 
+  // Use weekly interval for longer periods to avoid Yahoo Finance data limits
+  const interval = days > 365 ? "1wk" : "1d";
+
   for (const sym of symbols) {
     try {
-      const url  = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=1d&period1=${from}&period2=${to}`;
+      const url  = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=${interval}&period1=${from}&period2=${to}`;
       const data = await fetchYahoo(url);
       const result = data?.chart?.result?.[0];
       if (!result) continue;
