@@ -121,6 +121,21 @@
   @keyframes spin{to{transform:rotate(360deg)}}
   @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
   .fade-in{animation:fadeUp .4s ease both}
+  /* Signal tier badge */
+  .tier-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:6px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;border:1px solid;transition:all .15s;user-select:none}
+  .tier-badge:hover{filter:brightness(1.15)}
+  /* Breakdown panel */
+  .breakdown-panel{display:none;margin-top:10px;background:rgba(0,0,0,.2);border-radius:8px;padding:10px 12px;border:1px solid rgba(255,255,255,.06)}
+  .breakdown-panel.open{display:block;animation:fadeUp .2s ease}
+  .breakdown-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+  .breakdown-row:last-child{border-bottom:none}
+  .breakdown-icon{font-size:13px;width:18px;text-align:center;flex-shrink:0}
+  .breakdown-name{font-size:10px;color:#aaa;flex:1;font-family:'Space Mono',monospace}
+  .breakdown-bar-bg{width:80px;height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;flex-shrink:0}
+  .breakdown-bar{height:100%;border-radius:2px}
+  .breakdown-pts{font-size:10px;font-weight:700;font-family:'Space Mono',monospace;width:32px;text-align:right;flex-shrink:0}
+  .breakdown-label{font-size:8px;padding:1px 6px;border-radius:3px;font-weight:700;letter-spacing:.5px;flex-shrink:0;width:60px;text-align:center}
+  .breakdown-footer{margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);font-size:10px;color:#888;text-align:center}
   @media(max-width:480px){
     .stats{grid-template-columns:1fr 1fr}
     .perf-summary{grid-template-columns:1fr 1fr}
@@ -437,6 +452,103 @@ function renderResults(results){
 }
 
 
+
+// ── Signal tier calculation ───────────────────────────────────────────────────
+function calcTier(score) {
+  if (score >= 100) return { label:'🔥 EXCEPTIONAL', color:'#00ff88', bg:'rgba(0,255,136,.12)', border:'rgba(0,255,136,.3)', desc:'Multiple strong signals aligned — high conviction' };
+  if (score >= 75)  return { label:'⚡ STRONG',      color:'#fbbf24', bg:'rgba(251,191,36,.10)', border:'rgba(251,191,36,.25)', desc:'Several signals confirmed — solid setup' };
+  if (score >= 50)  return { label:'✅ MODERATE',    color:'#a5b4fc', bg:'rgba(99,102,241,.10)', border:'rgba(99,102,241,.25)', desc:'Some signals present — worth watching' };
+  return               { label:'➖ WEAK',           color:'#666',    bg:'rgba(255,255,255,.04)', border:'rgba(255,255,255,.10)', desc:'Few signals — low conviction' };
+}
+
+// ── Build breakdown rows from stock data ──────────────────────────────────────
+function buildBreakdown(s) {
+  const rows = [];
+
+  // RSI
+  if (s.rsi != null) {
+    if (s.rsi < 30)      rows.push({ icon:'🔥', name:`RSI Deeply Oversold (${s.rsi})`, pts:35, max:35, label:'STRONG',   color:'#00ff88' });
+    else if (s.rsi < 40) rows.push({ icon:'⚡', name:`RSI Oversold (${s.rsi})`,         pts:25, max:35, label:'SOLID',    color:'#6ee7b7' });
+    else if (s.rsi < 50) rows.push({ icon:'✅', name:`RSI Recovering (${s.rsi})`,        pts:10, max:35, label:'MODERATE', color:'#fbbf24' });
+    else                 rows.push({ icon:'➖', name:`RSI Neutral (${s.rsi})`,            pts:0,  max:35, label:'—',        color:'#444'    });
+  }
+
+  // MACD — infer from signals array
+  const hasMACD = s.signals.some(sig => sig.includes('MACD'));
+  rows.push(hasMACD
+    ? { icon:'✅', name:'MACD Bullish',  pts:20, max:20, label:'STRONG',   color:'#00ff88' }
+    : { icon:'➖', name:'MACD Bearish',  pts:0,  max:20, label:'—',        color:'#444'    });
+
+  // Moving averages
+  const hasSMA20 = s.signals.some(sig => sig.includes('SMA20'));
+  const hasSMA50 = s.signals.some(sig => sig.includes('SMA50'));
+  const hasGolden = s.signals.some(sig => sig.includes('Golden'));
+  let maScore = (hasSMA20?10:0) + (hasSMA50?10:0) + (hasGolden?10:0);
+  let maLabel = maScore >= 30 ? 'STRONG' : maScore >= 20 ? 'SOLID' : maScore >= 10 ? 'MODERATE' : '—';
+  let maColor = maScore >= 30 ? '#00ff88' : maScore >= 20 ? '#6ee7b7' : maScore >= 10 ? '#fbbf24' : '#444';
+  let maDesc  = [hasSMA20?'SMA20':'', hasSMA50?'SMA50':'', hasGolden?'Golden Cross':''].filter(Boolean).join(' + ') || 'No MA signals';
+  rows.push({ icon: maScore>0?'✅':'➖', name:`Moving Averages (${maDesc})`, pts:maScore, max:30, label:maLabel, color:maColor });
+
+  // EMA9
+  const hasEMA9 = s.signals.some(sig => sig.includes('EMA9'));
+  rows.push(hasEMA9
+    ? { icon:'✅', name:'Above EMA9',    pts:10, max:10, label:'SOLID',  color:'#6ee7b7' }
+    : { icon:'➖', name:'Below EMA9',    pts:0,  max:10, label:'—',      color:'#444'    });
+
+  // Volume
+  if (s.volSpike >= 3)       rows.push({ icon:'🔥', name:`Volume Surge ${s.volSpike}x avg`,  pts:20, max:20, label:'STRONG',   color:'#00ff88' });
+  else if (s.volSpike >= 2)  rows.push({ icon:'⚡', name:`Volume ${s.volSpike}x avg`,         pts:20, max:20, label:'STRONG',   color:'#00ff88' });
+  else if (s.volSpike >= 1.5)rows.push({ icon:'✅', name:`Volume ${s.volSpike}x avg`,         pts:10, max:20, label:'MODERATE', color:'#fbbf24' });
+  else                        rows.push({ icon:'➖', name:`Volume ${s.volSpike}x avg (low)`,  pts:0,  max:20, label:'—',        color:'#444'    });
+
+  // 5D Momentum
+  if (s.mom5 >= 10)      rows.push({ icon:'🔥', name:`5D Momentum +${s.mom5}%`, pts:15, max:15, label:'STRONG',   color:'#00ff88' });
+  else if (s.mom5 >= 5)  rows.push({ icon:'⚡', name:`5D Momentum +${s.mom5}%`, pts:15, max:15, label:'STRONG',   color:'#00ff88' });
+  else if (s.mom5 >= 2)  rows.push({ icon:'✅', name:`5D Momentum +${s.mom5}%`, pts:8,  max:15, label:'MODERATE', color:'#fbbf24' });
+  else if (s.mom5 > 0)   rows.push({ icon:'➖', name:`5D Momentum +${s.mom5}%`, pts:0,  max:15, label:'WEAK',     color:'#666'    });
+  else                    rows.push({ icon:'➖', name:`5D Momentum ${s.mom5}%`,  pts:0,  max:15, label:'—',        color:'#444'    });
+
+  // Today's change
+  if (s.dayChg >= 1.5) rows.push({ icon:'✅', name:`Today +${s.dayChg}%`,   pts:10, max:10, label:'SOLID', color:'#6ee7b7' });
+  else                  rows.push({ icon:'➖', name:`Today ${s.dayChg}%`,    pts:0,  max:10, label:'—',     color:'#444'    });
+
+  // 52-week position
+  if (s.w52Pos < 20)      rows.push({ icon:'🔥', name:`52W Position: ${s.w52Pos}% of range`, pts:15, max:15, label:'STRONG',   color:'#00ff88' });
+  else if (s.w52Pos < 25) rows.push({ icon:'⚡', name:`52W Position: ${s.w52Pos}% of range`, pts:15, max:15, label:'STRONG',   color:'#00ff88' });
+  else if (s.w52Pos < 40) rows.push({ icon:'✅', name:`52W Position: ${s.w52Pos}% of range`, pts:8,  max:15, label:'MODERATE', color:'#fbbf24' });
+  else                     rows.push({ icon:'➖', name:`52W Position: ${s.w52Pos}% of range`, pts:0,  max:15, label:'—',        color:'#444'    });
+
+  return rows;
+}
+
+function breakdownPanelHTML(s, cardId) {
+  const tier = calcTier(s.score);
+  const rows = buildBreakdown(s);
+  const strongCount = rows.filter(r => r.label === 'STRONG').length;
+  const solidCount  = rows.filter(r => r.label === 'SOLID' || r.label === 'MODERATE').length;
+
+  const rowsHTML = rows.map(r => {
+    const barWidth = r.max > 0 ? Math.round((r.pts / r.max) * 100) : 0;
+    const labelBg  = r.pts > 0 ? r.color + '22' : 'rgba(255,255,255,.04)';
+    return `<div class="breakdown-row">
+      <span class="breakdown-icon">${r.icon}</span>
+      <span class="breakdown-name">${r.name}</span>
+      <div class="breakdown-bar-bg">
+        <div class="breakdown-bar" style="width:${barWidth}%;background:${r.color}"></div>
+      </div>
+      <span class="breakdown-pts" style="color:${r.color}">${r.pts > 0 ? '+'+r.pts : '—'}</span>
+      <span class="breakdown-label" style="background:${labelBg};color:${r.pts>0?r.color:'#555'}">${r.label}</span>
+    </div>`;
+  }).join('');
+
+  return `<div class="breakdown-panel" id="breakdown-${cardId}">
+    ${rowsHTML}
+    <div class="breakdown-footer">
+      ${strongCount} strong signal${strongCount!==1?'s':''} · ${solidCount} moderate · Total: ${s.score} pts · ${tier.desc}
+    </div>
+  </div>`;
+}
+
 // ── Analyst panel HTML ────────────────────────────────────────────────────────
 function analystPanelHTML(a, price) {
   if (!a) return '';
@@ -485,7 +597,13 @@ function signalCardHTML(s,rank){
   const confColor=s.confidence>70?'linear-gradient(90deg,#00bb55,#00ff88)':s.confidence>50?'linear-gradient(90deg,#d97706,#fbbf24)':'linear-gradient(90deg,#cc2222,#ff5555)';
   const rsiColor=s.rsi&&s.rsi<40?g:s.rsi&&s.rsi>60?r:'#e0e0e0';
   const logged=loggedSet.has(s.ticker);
-  return`<div class="signal-card"><div class="card-accent"></div><div class="rank-badge" style="background:${rnkBg};color:${rnkC}">#${rank}</div><div class="card-header"><div class="card-ticker-row"><span class="card-ticker">${s.ticker}</span><span class="sector-pill" style="background:${c.bg};color:${c.text};border:1px solid ${c.border}">${s.sector}</span><span class="buy-pill">▲ BUY</span></div><div class="card-name">${s.name}</div></div><div class="live-price"><span class="price-badge">📡 Live: $${s.price}<span style="margin-left:8px;color:${s.dayChg>=0?g:r}">${s.dayChg>=0?'+':''}${s.dayChg}% today</span></span></div><div class="price-grid"><div class="price-box"><div class="price-box-label">ENTRY</div><div class="price-box-val" style="color:#e0e0e0">$${s.entry}</div></div><div class="price-box"><div class="price-box-label">TARGET</div><div class="price-box-val" style="color:${g}">$${s.target}</div></div><div class="price-box"><div class="price-box-label">STOP</div><div class="price-box-val" style="color:${r}">$${s.stop}</div></div></div><div class="badges"><span class="badge" style="color:${g};background:rgba(0,255,136,.08)">+${s.upside}% target</span><span class="badge" style="color:${r};background:rgba(255,70,70,.08)">-${s.downside}% stop</span><span class="badge" style="color:#888;background:rgba(255,255,255,.04)">R/R ${s.rr}:1</span></div><div class="w52-wrap"><div class="w52-title">52-WEEK RANGE</div>${s.week52Low&&s.week52High?`<div class="w52-labels"><span>$${s.week52Low}</span><span style="font-size:9px;font-weight:700;color:${w52color};font-family:'Space Mono',monospace">${w52pct.toFixed(0)}% of range</span><span>$${s.week52High}</span></div><div class="w52-bar-bg"><div class="w52-bar-fill" style="width:${w52pct}%;background:linear-gradient(90deg,#00ff88,${w52color})"></div><div class="w52-marker" style="left:calc(${w52pct}% - 1px)"></div></div>`:'<span style="color:#444;font-size:10px">N/A</span>'}</div><div class="div-row"><span class="div-label">DIVIDEND YIELD</span><span class="div-value" style="color:${s.dividendYield>4?g:s.dividendYield>2?'#fbbf24':s.dividendYield?'#888':'#444'}">${s.dividendYield?s.dividendYield.toFixed(2)+'%':'—'}</span></div>
+  return`<div class="signal-card"><div class="card-accent"></div><div class="rank-badge" style="background:${rnkBg};color:${rnkC}">#${rank}</div><div class="card-header"><div class="card-ticker-row"><span class="card-ticker">${s.ticker}</span><span class="sector-pill" style="background:${c.bg};color:${c.text};border:1px solid ${c.border}">${s.sector}</span><span class="buy-pill">▲ BUY</span>
+      <span class="tier-badge" onclick="toggleBreakdown('${rank}')"
+        style="background:${calcTier(s.score).bg};color:${calcTier(s.score).color};border-color:${calcTier(s.score).border}">
+        ${calcTier(s.score).label} <span style="font-size:9px;opacity:.7">▾</span>
+      </span>
+    </div><div class="card-name">${s.name}</div></div>
+    ${breakdownPanelHTML(s, rank)}<div class="live-price"><span class="price-badge">📡 Live: $${s.price}<span style="margin-left:8px;color:${s.dayChg>=0?g:r}">${s.dayChg>=0?'+':''}${s.dayChg}% today</span></span></div><div class="price-grid"><div class="price-box"><div class="price-box-label">ENTRY</div><div class="price-box-val" style="color:#e0e0e0">$${s.entry}</div></div><div class="price-box"><div class="price-box-label">TARGET</div><div class="price-box-val" style="color:${g}">$${s.target}</div></div><div class="price-box"><div class="price-box-label">STOP</div><div class="price-box-val" style="color:${r}">$${s.stop}</div></div></div><div class="badges"><span class="badge" style="color:${g};background:rgba(0,255,136,.08)">+${s.upside}% target</span><span class="badge" style="color:${r};background:rgba(255,70,70,.08)">-${s.downside}% stop</span><span class="badge" style="color:#888;background:rgba(255,255,255,.04)">R/R ${s.rr}:1</span></div><div class="w52-wrap"><div class="w52-title">52-WEEK RANGE</div>${s.week52Low&&s.week52High?`<div class="w52-labels"><span>$${s.week52Low}</span><span style="font-size:9px;font-weight:700;color:${w52color};font-family:'Space Mono',monospace">${w52pct.toFixed(0)}% of range</span><span>$${s.week52High}</span></div><div class="w52-bar-bg"><div class="w52-bar-fill" style="width:${w52pct}%;background:linear-gradient(90deg,#00ff88,${w52color})"></div><div class="w52-marker" style="left:calc(${w52pct}% - 1px)"></div></div>`:'<span style="color:#444;font-size:10px">N/A</span>'}</div><div class="div-row"><span class="div-label">DIVIDEND YIELD</span><span class="div-value" style="color:${s.dividendYield>4?g:s.dividendYield>2?'#fbbf24':s.dividendYield?'#888':'#444'}">${s.dividendYield?s.dividendYield.toFixed(2)+'%':'—'}</span></div>
     ${s.analystTargets ? analystPanelHTML(s.analystTargets, s.price) : ''}<div class="signal-tags">${s.signals.map(sig=>`<span class="signal-tag">◆ ${sig}</span>`).join('')}</div><div class="indicators">${s.rsi!=null?`<div class="ind"><div class="ind-label">RSI(14)</div><div class="ind-val" style="color:${rsiColor}">${s.rsi.toFixed(1)}</div></div>`:''}<div class="ind"><div class="ind-label">VOL</div><div class="ind-val" style="color:${s.volSpike>1.5?'#fbbf24':'#555'}">${s.volSpike.toFixed(1)}x</div></div><div class="ind"><div class="ind-label">5D MOM</div><div class="ind-val" style="color:${s.mom5>0?g:r}">${s.mom5>0?'+':''}${s.mom5.toFixed(1)}%</div></div><div class="ind"><div class="ind-label">SCORE</div><div class="ind-val" style="color:#a5b4fc">${s.score}</div></div></div><div class="conf-row"><span class="conf-label">CONFIDENCE</span><div class="conf-bar-bg"><div class="conf-bar" style="width:${s.confidence}%;background:${confColor}"></div></div><span class="conf-pct">${s.confidence}%</span></div><button class="log-btn ${logged?'logged':''}" onclick="logTrade('${s.ticker}','${s.entry}','${s.sector}')">${logged?'✓ TRADE LOGGED':`▲ LOG BUY @ $${s.entry}`}</button></div>`;
 }
 
@@ -630,6 +748,16 @@ function logTrade(ticker,price,sector){
   document.getElementById('tradeLog').style.display='block';
   document.getElementById('statTrades').textContent=trades.filter(t=>t.date===today).length;
   renderResults(allResults);
+}
+
+function toggleBreakdown(cardId) {
+  const panel = document.getElementById('breakdown-' + cardId);
+  if (!panel) return;
+  panel.classList.toggle('open');
+  // Update arrow direction
+  const badge = panel.previousElementSibling
+    ? panel.closest('.signal-card')?.querySelector('.tier-badge span:last-child')
+    : null;
 }
 
 function clearTrades(){
