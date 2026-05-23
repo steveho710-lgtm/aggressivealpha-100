@@ -121,6 +121,8 @@
   @keyframes spin{to{transform:rotate(360deg)}}
   @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
   .fade-in{animation:fadeUp .4s ease both}
+  /* Earnings warning */
+  .earnings-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:.5px;margin-bottom:10px}
   /* Signal tier badge */
   .tier-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:6px;font-size:10px;font-weight:800;letter-spacing:.5px;cursor:pointer;border:1px solid;transition:all .15s;user-select:none}
   .tier-badge:hover{filter:brightness(1.15)}
@@ -546,6 +548,26 @@ function breakdownPanelHTML(s, cardId) {
     <div class="breakdown-footer">
       ${strongCount} strong signal${strongCount!==1?'s':''} · ${solidCount} moderate · Total: ${s.score} pts · ${tier.desc}
     </div>
+  </div>`;
+}
+
+// ── Earnings badge HTML ──────────────────────────────────────────────────────
+function earningsBadgeHTML(earnings) {
+  if (!earnings) return '';
+  const days = earnings.daysUntil;
+  const timeLabel = earnings.time === 'amc' ? 'After Close' : earnings.time === 'bmo' ? 'Before Open' : '';
+  const timeStr   = timeLabel ? ` · ${timeLabel}` : '';
+  const dateStr   = new Date(earnings.date).toLocaleDateString('en-AU', {day:'numeric', month:'short'});
+
+  let color, bg, border, icon, urgency;
+  if (days === 0)      { icon='🚨'; color='#ff4444'; bg='rgba(255,68,68,.15)';   border='rgba(255,68,68,.35)';   urgency='EARNINGS TODAY'; }
+  else if (days <= 2)  { icon='⚠️'; color='#ff8800'; bg='rgba(255,136,0,.12)';  border='rgba(255,136,0,.3)';    urgency=`EARNINGS IN ${days} DAY${days>1?'S':''}`; }
+  else if (days <= 7)  { icon='📅'; color='#fbbf24'; bg='rgba(251,191,36,.10)'; border='rgba(251,191,36,.25)';  urgency=`EARNINGS IN ${days} DAYS`; }
+  else                 { icon='📅'; color='#888';    bg='rgba(255,255,255,.04)'; border='rgba(255,255,255,.10)'; urgency=`EARNINGS IN ${days} DAYS`; }
+
+  return `<div class="earnings-badge" style="background:${bg};border:1px solid ${border};color:${color}">
+    ${icon} ${urgency} · ${dateStr}${timeStr}
+    ${days <= 7 ? '<span style="font-size:9px;opacity:.7;margin-left:4px">— Higher risk/reward</span>' : ''}
   </div>`;
 }
 
