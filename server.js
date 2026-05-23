@@ -632,6 +632,52 @@ app.get("/api/verify-now", async (req,res)=>{
 });
 
 // Status
+
+// ── /api/compare ──────────────────────────────────────────────────────────────
+app.get("/api/compare", async (req, res) => {
+  const { ticker, period } = req.query;
+  if (!ticker) return res.status(400).json({ success:false, error:"ticker required" });
+
+  const periodDays = { "1M":30, "3M":90, "6M":180, "1Y":365, "2Y":730, "3Y":1095, "5Y":1825 };
+  const days   = periodDays[period] || 180;
+  const to     = Math.floor(Date.now() / 1000);
+  const from   = to - days * 24 * 3600;
+  const symbols = [ticker.toUpperCase(), "SPY", "QQQ", "DIA"];
+  const results = {};
+
+  for (const sym of symbols) {
+    try {
+      const url  = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=1d&period1=${from}&period2=${to}`;
+      const data = await fetchYahoo(url);
+      const result = data?.chart?.result?.[0];
+      if (!result) continue;
+      const closes     = result.indicators.quote[0].close.filter(Boolean);
+      const timestamps = result.timestamp;
+      if (closes.length < 2) continue;
+      const base       = closes[0];
+      const normalised = closes.map(c => parseFloat(((c-base)/base*100).toFixed(2)));
+      const dates      = timestamps.map(t => {
+        const d = new Date(t*1000);
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      });
+      results[sym] = {
+        dates, normalised,
+        totalReturn: parseFloat(((closes[closes.length-1]-base)/base*100).toFixed(2)),
+        startPrice:  parseFloat(base.toFixed(2)),
+        endPrice:    parseFloat(closes[closes.length-1].toFixed(2)),
+      };
+      await sleep(300);
+    } catch(e) {
+      console.log(`Compare ${sym}: ${e.message}`);
+    }
+  }
+
+  if (!results[ticker.toUpperCase()]) {
+    return res.status(404).json({ success:false, error:`No data found for ${ticker}` });
+  }
+  res.json({ success:true, ticker:ticker.toUpperCase(), period:period||"6M", data:results });
+});
+
 app.get("/api/status",(req,res)=>{
   const age=cacheTime?((new Date()-cacheTime)/(1000*60*60)).toFixed(1):null;
   res.json({status:"ok",stocks:STOCKS.length,scanInProgress,scanProgress,lastScan:cacheTime?cacheTime.toISOString():"Never",cacheAgeHours:age,supabase:"connected",scheduledScan:"1:00 AM AEST Mon–Fri",scheduledVerification:"8:30 AM AEST Mon–Fri"});
