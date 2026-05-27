@@ -493,7 +493,7 @@ app.get("/api/scan", (req, res) => {
   const force=req.query.refresh==="true";
   if (cachedResults&&cacheTime&&!force) {
     const age=(new Date()-cacheTime)/(1000*60*60);
-    if (age<30) return res.json({...cachedResults,fromCache:true,cacheAgeHours:parseFloat(age.toFixed(1))});
+    if (age<48) return res.json({...cachedResults,fromCache:true,cacheAgeHours:parseFloat(age.toFixed(1))});
   }
   if (!scanInProgress) runScan().catch(e=>console.error(e));
   res.json({success:false,scanning:true,progress:0,message:"Scan started. Poll /api/results."});
@@ -631,7 +631,7 @@ app.listen(PORT, async ()=>{
   // On startup, restore last scan from Supabase so cache survives restarts
   try {
     const today = new Date().toISOString().split("T")[0];
-    const yesterday = new Date(Date.now() - 24*3600*1000).toISOString().split("T")[0];
+    const yesterday = new Date(Date.now() - 72*3600*1000).toISOString().split("T")[0]; // look back 3 days
     const { data } = await supabase
       .from("signal_history")
       .select("*")
