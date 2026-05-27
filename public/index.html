@@ -107,8 +107,8 @@
   .verify-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px;margin-bottom:10px}
   .verify-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
   .verify-date{font-size:10px;color:#555;letter-spacing:1.5px;font-weight:700}
-  .verify-table-head{display:grid;grid-template-columns:70px 1fr 70px 70px 70px 70px 70px 90px;gap:4px;padding:7px 10px;background:rgba(255,255,255,.03);border-radius:6px;font-size:8px;color:#444;letter-spacing:1px;font-weight:700;margin-bottom:4px}
-  .verify-row{display:grid;grid-template-columns:70px 1fr 70px 70px 70px 70px 70px 90px;gap:4px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.03);font-size:11px;font-family:'Space Mono',monospace;align-items:center}
+  .verify-table-head{display:grid;grid-template-columns:30px 60px 1fr 44px 70px 70px 60px 70px 60px 90px;gap:4px;padding:7px 10px;background:rgba(255,255,255,.03);border-radius:6px;font-size:8px;color:#444;letter-spacing:1px;font-weight:700;margin-bottom:4px}
+  .verify-row{display:grid;grid-template-columns:30px 60px 1fr 44px 70px 70px 60px 70px 60px 90px;gap:4px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.03);font-size:11px;font-family:'Space Mono',monospace;align-items:center}
   .verify-row:last-child{border-bottom:none}
   .result-badge{padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.5px;text-align:center}
   .trade-log{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;margin-top:18px;display:none}
@@ -146,7 +146,7 @@
     .perf-summary{grid-template-columns:1fr 1fr}
     .indices-grid{grid-template-columns:1fr 1fr}
     .verify-table-head,.verify-row{grid-template-columns:60px 1fr 60px 60px 80px}
-    .verify-table-head span:nth-child(n+4):not(:last-child),.verify-row span:nth-child(n+4):not(:last-child){display:none}
+    .verify-table-head span:nth-child(n+5):not(:last-child),.verify-row span:nth-child(n+5):not(:last-child){display:none}
   }
 </style>
 </head>
@@ -864,8 +864,8 @@ async function loadVerification() {
           <span style="font-size:11px;color:#888">${dayTarget} targets hit · ${dayStop} stopped out · ${rows.length} signals</span>
         </div>
         <div class="verify-table-head">
-          <span>TICKER</span><span>SECTOR</span>
-          <span>DAY HIGH</span><span>DAY LOW</span>
+          <span>#</span><span>TICKER</span><span>SECTOR</span>
+          <span>CONF</span><span>DAY HIGH</span><span>DAY LOW</span>
           <span>ENTRY</span><span>TARGET</span><span>STOP</span>
           <span>RESULT</span>
         </div>
@@ -873,8 +873,10 @@ async function loadVerification() {
           const rs=getResultStyle(r.result);
           const c=sc(r.sector||'Technology');
           return`<div class="verify-row">
+            <span style="color:#fbbf24;font-weight:700">#${r.rank||'—'}</span>
             <span style="color:#e0e0e0;font-weight:700">${r.ticker}</span>
-            <span style="font-size:8px;padding:1px 5px;border-radius:3px;background:${c.bg};color:${c.text}">${r.sector||'—'}</span>
+            <span style="font-size:8px;padding:1px 5px;border-radius:3px;background:${c.bg};color:${c.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.sector||'—'}</span>
+            <span style="color:${r.confidence>=80?'#00ff88':r.confidence>=60?'#fbbf24':'#ff5555'};font-weight:700">${r.confidence||'—'}%</span>
             <span style="color:#00ff88">$${r.day_high?.toFixed(2)||'—'}</span>
             <span style="color:#ff5555">$${r.day_low?.toFixed(2)||'—'}</span>
             <span style="color:#e0e0e0">$${r.entry_price?.toFixed(2)||'—'}</span>
