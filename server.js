@@ -490,13 +490,23 @@ console.log("⏰ Verification scheduled: 4:30 PM EDT daily (30min after NYSE clo
 
 // Trigger scan / return cache
 app.get("/api/scan", (req, res) => {
-  const force=req.query.refresh==="true";
-  if (cachedResults&&cacheTime&&!force) {
-    const age=(new Date()-cacheTime)/(1000*60*60);
-    if (age<48) return res.json({...cachedResults,fromCache:true,cacheAgeHours:parseFloat(age.toFixed(1))});
+  const force = req.query.refresh === "true";
+
+  // Return cache only if:
+  // 1. Not a force refresh
+  // 2. Cache exists and is a REAL scan (not just a Supabase restore)
+  // 3. Cache is less than 23 hours old
+  if (cachedResults && cacheTime && !force) {
+    const age = (new Date() - cacheTime) / (1000*60*60);
+    const isRealScan = !cachedResults.fromRestore;
+    if (isRealScan && age < 23) {
+      return res.json({...cachedResults, fromCache:true, cacheAgeHours:parseFloat(age.toFixed(1))});
+    }
   }
+
+  // Start fresh scan
   if (!scanInProgress) runScan().catch(e=>console.error(e));
-  res.json({success:false,scanning:true,progress:0,message:"Scan started. Poll /api/results."});
+  res.json({success:false, scanning:true, progress:0, message:"Scan started. Poll /api/results."});
 });
 
 // Poll for results
