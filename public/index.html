@@ -430,7 +430,8 @@ async function startScan() {
   try{ const ir=await fetch('/api/indices'); const id=await ir.json(); if(id.success) renderIndices(id.data); }catch(e){}
 
   try{
-    const res=await fetch('/api/scan'); const data=await res.json();
+    const force = document.getElementById('scanBtn').textContent.includes('RESCAN');
+    const res=await fetch(force ? '/api/scan?refresh=true' : '/api/scan'); const data=await res.json();
     if(data.success&&data.results){
       btn.disabled=false; btn.innerHTML='📡 RESCAN 100 US STOCKS';
       renderResults(data.results);
