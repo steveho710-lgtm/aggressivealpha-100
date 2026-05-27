@@ -356,6 +356,10 @@ async function runVerification() {
       verifications.push({
         scan_date:   today,
         ticker:      sig.ticker,
+        sector:      sig.sector || null,
+        confidence:  sig.confidence || null,
+        score:       sig.score || null,
+        rank:        signals.findIndex(s => s.ticker === sig.ticker) + 1,
         entry_price: sig.entry_price,
         target_price:sig.target_price,
         stop_price:  sig.stop_price,
@@ -619,8 +623,58 @@ app.get("/api/status",(req,res)=>{
 app.get("/api/health",(req,res)=>res.json({status:"ok",message:"AggressiveAlpha with Supabase!"}));
 app.get("*",(req,res)=>res.sendFile(path.join(__dirname,"public","index.html")));
 
-app.listen(PORT,()=>{
+app.listen(PORT, async ()=>{
   console.log(`\n⚡ AggressiveAlpha-100 on port ${PORT}`);
   console.log(`   ${STOCKS.length} stocks · Yahoo Finance · Supabase signal history + verification`);
-  console.log(`   Scan: 1:00 AM AEST | Verify: 8:30 AM AEST | Both Mon–Fri\n`);
+  console.log(`   Scan: 10:00 AM EST | Verify: 4:30 PM EST | Mon–Fri\n`);
+
+  // On startup, restore last scan from Supabase so cache survives restarts
+  try {
+    const today = new Date().toISOString().split("T")[0];
+    const yesterday = new Date(Date.now() - 24*3600*1000).toISOString().split("T")[0];
+    const { data } = await supabase
+      .from("signal_history")
+      .select("*")
+      .gte("scan_date", yesterday)
+      .order("scan_date", { ascending: false })
+      .order("score", { ascending: false });
+
+    if (data && data.length > 0) {
+      const latestDate = data[0].scan_date;
+      const latestSignals = data.filter(d => d.scan_date === latestDate);
+      // Reconstruct minimal result objects from Supabase data
+      const restored = latestSignals.map(s => ({
+        ticker:       s.ticker,
+        name:         s.company_name,
+        sector:       s.sector,
+        score:        s.score,
+        confidence:   s.confidence,
+        price:        s.entry_price,
+        entry:        s.entry_price,
+        target:       s.target_price,
+        stop:         s.stop_price,
+        signals:      s.signals ? s.signals.split(" | ") : [],
+        upside:       s.target_price && s.entry_price ? (((s.target_price - s.entry_price) / s.entry_price) * 100).toFixed(1) : "0",
+        downside:     s.stop_price && s.entry_price ? (((s.entry_price - s.stop_price) / s.entry_price) * 100).toFixed(1) : "0",
+        rr:           "1.8",
+        rsi:          null, dayChg: 0, mom5: 0, volSpike: 1,
+        w52Pos:       50, week52High: null, week52Low: null, dividendYield: null,
+        earnings:     null, analystTargets: null,
+      }));
+      cachedResults = {
+        success: true,
+        results: restored,
+        failed: [],
+        total: STOCKS.length,
+        scannedAt: latestDate + "T10:00:00.000Z",
+        fromRestore: true,
+      };
+      cacheTime = new Date(latestDate);
+      console.log(`✅ Restored ${restored.length} signals from Supabase (${latestDate})`);
+    } else {
+      console.log("ℹ️  No recent signals in Supabase to restore");
+    }
+  } catch(e) {
+    console.log("⚠️  Could not restore cache from Supabase:", e.message);
+  }
 });
