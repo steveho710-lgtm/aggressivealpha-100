@@ -359,7 +359,7 @@ async function runVerification() {
         sector:      sig.sector || null,
         confidence:  sig.confidence || null,
         score:       sig.score || null,
-        rank:        signals.findIndex(s => s.ticker === sig.ticker) + 1,
+        rank:        signals.indexOf(sig) + 1,
         entry_price: sig.entry_price,
         target_price:sig.target_price,
         stop_price:  sig.stop_price,
@@ -493,7 +493,7 @@ app.get("/api/scan", (req, res) => {
   const force=req.query.refresh==="true";
   if (cachedResults&&cacheTime&&!force) {
     const age=(new Date()-cacheTime)/(1000*60*60);
-    if (age<23) return res.json({...cachedResults,fromCache:true,cacheAgeHours:parseFloat(age.toFixed(1))});
+    if (age<30) return res.json({...cachedResults,fromCache:true,cacheAgeHours:parseFloat(age.toFixed(1))});
   }
   if (!scanInProgress) runScan().catch(e=>console.error(e));
   res.json({success:false,scanning:true,progress:0,message:"Scan started. Poll /api/results."});
@@ -669,7 +669,7 @@ app.listen(PORT, async ()=>{
         scannedAt: latestDate + "T10:00:00.000Z",
         fromRestore: true,
       };
-      cacheTime = new Date(latestDate);
+      cacheTime = new Date(); // set to now so age < 23h check passes
       console.log(`✅ Restored ${restored.length} signals from Supabase (${latestDate})`);
     } else {
       console.log("ℹ️  No recent signals in Supabase to restore");
