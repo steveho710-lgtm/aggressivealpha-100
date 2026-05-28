@@ -2,8 +2,11 @@ const express    = require("express");
 const cors       = require("cors");
 const path       = require("path");
 const https      = require("https");
+const fs         = require("fs");
 const cron       = require("node-cron");
 const { createClient } = require("@supabase/supabase-js");
+
+const CACHE_FILE = path.join(__dirname, "scan_cache.json");
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -467,6 +470,14 @@ async function runScan() {
     cacheTime=new Date();
     console.log(`\n✅ Scan complete — ${results.length}/${STOCKS.length} scored`);
 
+    // Save cache to file so it survives server restarts
+    try {
+      fs.writeFileSync(CACHE_FILE, JSON.stringify({ cachedResults, cacheTime: cacheTime.toISOString() }));
+      console.log("✅ Cache saved to file");
+    } catch(e) {
+      console.log("⚠️  Could not save cache file:", e.message);
+    }
+
     // Save top 10 to Supabase
     const scanDate=new Date().toISOString().split("T")[0];
     await saveSignalsToSupabase(sorted.slice(0,10), scanDate);
@@ -638,53 +649,24 @@ app.listen(PORT, async ()=>{
   console.log(`   ${STOCKS.length} stocks · Yahoo Finance · Supabase signal history + verification`);
   console.log(`   Scan: 10:00 AM EST | Verify: 4:30 PM EST | Mon–Fri\n`);
 
-  // On startup, restore last scan from Supabase so cache survives restarts
+  // On startup, restore cache from local file (fast, reliable)
   try {
-    const today = new Date().toISOString().split("T")[0];
-    const yesterday = new Date(Date.now() - 72*3600*1000).toISOString().split("T")[0]; // look back 3 days
-    const { data } = await supabase
-      .from("signal_history")
-      .select("*")
-      .gte("scan_date", yesterday)
-      .order("scan_date", { ascending: false })
-      .order("score", { ascending: false });
-
-    if (data && data.length > 0) {
-      const latestDate = data[0].scan_date;
-      const latestSignals = data.filter(d => d.scan_date === latestDate);
-      // Reconstruct minimal result objects from Supabase data
-      const restored = latestSignals.map(s => ({
-        ticker:       s.ticker,
-        name:         s.company_name,
-        sector:       s.sector,
-        score:        s.score,
-        confidence:   s.confidence,
-        price:        s.entry_price,
-        entry:        s.entry_price,
-        target:       s.target_price,
-        stop:         s.stop_price,
-        signals:      s.signals ? s.signals.split(" | ") : [],
-        upside:       s.target_price && s.entry_price ? (((s.target_price - s.entry_price) / s.entry_price) * 100).toFixed(1) : "0",
-        downside:     s.stop_price && s.entry_price ? (((s.entry_price - s.stop_price) / s.entry_price) * 100).toFixed(1) : "0",
-        rr:           "1.8",
-        rsi:          null, dayChg: 0, mom5: 0, volSpike: 1,
-        w52Pos:       50, week52High: null, week52Low: null, dividendYield: null,
-        earnings:     null, analystTargets: null,
-      }));
-      cachedResults = {
-        success: true,
-        results: restored,
-        failed: [],
-        total: STOCKS.length,
-        scannedAt: latestDate + "T10:00:00.000Z",
-        fromRestore: true,
-      };
-      cacheTime = new Date(); // set to now so age < 23h check passes
-      console.log(`✅ Restored ${restored.length} signals from Supabase (${latestDate})`);
+    if (fs.existsSync(CACHE_FILE)) {
+      const saved = JSON.parse(fs.readFileSync(CACHE_FILE, "utf8"));
+      if (saved && saved.cachedResults && saved.cacheTime) {
+        const age = (new Date() - new Date(saved.cacheTime)) / (1000*60*60);
+        if (age < 48) { // restore if less than 48 hours old
+          cachedResults = { ...saved.cachedResults, fromRestore: true };
+          cacheTime     = new Date(saved.cacheTime);
+          console.log(`✅ Restored cache from file (${age.toFixed(1)}h old, ${cachedResults.results?.length} stocks)`);
+        } else {
+          console.log(`ℹ️  Cache file too old (${age.toFixed(1)}h), skipping restore`);
+        }
+      }
     } else {
-      console.log("ℹ️  No recent signals in Supabase to restore");
+      console.log("ℹ️  No cache file found — fresh start");
     }
   } catch(e) {
-    console.log("⚠️  Could not restore cache from Supabase:", e.message);
+    console.log("⚠️  Could not restore cache from file:", e.message);
   }
 });
